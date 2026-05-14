@@ -1,0 +1,17 @@
+package com.terstredisproject1.infrastructure.adapter.port;
+
+import com.terstredisproject1.infrastructure.db.UserRepository;
+import com.terstredisproject1.usecase.user.port.DeleteUserPort;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
+public class DeleteUserPortImpl implements DeleteUserPort {
+    private final UserRepository userRepository;
+
+    @Override
+    public void deleteUser(long userId) {
+        userRepository.deleteById(userId);
+    }
+}
