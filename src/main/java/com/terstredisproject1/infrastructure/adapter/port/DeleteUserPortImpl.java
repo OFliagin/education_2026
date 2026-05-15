@@ -1,6 +1,6 @@
 package com.terstredisproject1.infrastructure.adapter.port;
 
-import com.terstredisproject1.infrastructure.db.UserRepository;
+import com.terstredisproject1.infrastructure.db.pg.UserRepository;
 import com.terstredisproject1.usecase.user.port.DeleteUserPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;

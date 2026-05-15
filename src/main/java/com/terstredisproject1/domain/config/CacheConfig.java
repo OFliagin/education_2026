@@ -1,4 +1,4 @@
-package com.terstredisproject1.infrastructure.config;
+package com.terstredisproject1.domain.config;
 
 
 import org.springframework.beans.factory.annotation.Value;

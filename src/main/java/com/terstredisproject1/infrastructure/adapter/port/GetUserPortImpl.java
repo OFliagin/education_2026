@@ -1,7 +1,7 @@
 package com.terstredisproject1.infrastructure.adapter.port;
 
 import com.terstredisproject1.domain.model.User;
-import com.terstredisproject1.infrastructure.db.UserRepository;
+import com.terstredisproject1.infrastructure.db.pg.UserRepository;
 import com.terstredisproject1.usecase.user.port.GetUserPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,5 +20,10 @@ public class GetUserPortImpl implements GetUserPort {
     public User getUser(long userId) {
         log.debug("Getting user with id: {}", userId);
         return userRepository.findById(userId).orElse(null);
+    }
+
+    @Override
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 }

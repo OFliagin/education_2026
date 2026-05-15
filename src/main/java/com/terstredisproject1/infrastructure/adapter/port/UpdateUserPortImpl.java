@@ -1,7 +1,7 @@
 package com.terstredisproject1.infrastructure.adapter.port;
 
 import com.terstredisproject1.domain.model.User;
-import com.terstredisproject1.infrastructure.db.UserRepository;
+import com.terstredisproject1.infrastructure.db.pg.UserRepository;
 import com.terstredisproject1.usecase.user.port.UpdateUserPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CachePut;
