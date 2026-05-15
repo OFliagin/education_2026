@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 public class UpdateUserUseCase {
     private final UpdateUserPort updateUserPort;
 
-
     public void execute(long id, UpdateUserRequest updateUserRequest) {
         updateUserPort.updateUser(id, mapToUser(updateUserRequest));
     }
