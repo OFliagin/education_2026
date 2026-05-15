@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-public class UserController {
+public class ManageUserController {
 
     private final CreateUserUseCase createUserUseCase;
     private final DeleteUserUseCase deleteUserUseCase;

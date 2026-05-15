@@ -28,6 +28,7 @@ public class CreateUserUseCase {
         return User.builder()
                 .username(createUserRequest.name())
                 .email(createUserRequest.email())
+                .password(createUserRequest.password())
                 .build();
     }
 }

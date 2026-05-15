@@ -9,16 +9,20 @@ import java.time.Duration;
 
 @Repository
 @RequiredArgsConstructor
-public class LoginUserRepository {
+public class SessionUserRepository {
     private static final String SESSION_USER_KEY = "session:user:";
     private static final String ONLINE = "online";
     private final StringRedisTemplate stringRedisTemplate;
 
     public void save(User user) {
-        stringRedisTemplate.opsForSet().add(
+        stringRedisTemplate.opsForValue().set(
                 SESSION_USER_KEY + user.getId(),
                 ONLINE,
                 Duration.ofMinutes(30)
-        ) ;
+        );
+    }
+
+    public void delete(User user) {
+        stringRedisTemplate.delete(SESSION_USER_KEY + user.getId());
     }
 }
