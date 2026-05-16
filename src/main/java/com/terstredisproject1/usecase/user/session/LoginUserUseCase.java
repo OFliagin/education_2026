@@ -1,4 +1,4 @@
-package com.terstredisproject1.usecase.user.sassion;
+package com.terstredisproject1.usecase.user.session;
 
 import com.terstredisproject1.adapter.controller.request.LoginUserRequest;
 import com.terstredisproject1.domain.model.User;
