@@ -2,112 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Redis Playground</title>
+  <title>Redis Playground — Sign in</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="auth-page">
 
-<header>
-  <h1>Redis Playground</h1>
-  <label class="global-id">User ID <input id="userId" type="number" value="1" min="1"></label>
-</header>
+<div class="auth-card">
+  <div class="auth-logo">⚡ Redis Playground</div>
 
-<main>
-
-  <!-- Users -->
-  <section class="card">
-    <h2>Users</h2>
-    <div class="fields">
-      <input id="user-name"     placeholder="name">
-      <input id="user-email"    placeholder="email">
-      <input id="user-password" placeholder="password (create only)" type="password">
-    </div>
-    <div class="actions">
-      <button onclick="createUser()">POST /users</button>
-      <button onclick="getUser()">GET /users/{id}</button>
-      <button onclick="updateUser()">PATCH /users/{id}</button>
-      <button onclick="deleteUser()">DELETE /users/{id}</button>
-    </div>
-  </section>
-
-  <!-- Session -->
-  <section class="card">
-    <h2>Session / Online</h2>
-    <div class="fields">
-      <input id="login-email"    placeholder="email">
-      <input id="login-password" placeholder="password" type="password">
-    </div>
-    <div class="actions">
-      <button onclick="login()">POST /auth/login</button>
-      <button onclick="logout()">POST /auth/logout/{id}</button>
-      <button onclick="checkOnline()">GET /auth/online/{id}</button>
-      <button onclick="refreshSession()">POST /auth/refresh/{id}</button>
-    </div>
-  </section>
-
-  <!-- Payment Profile -->
-  <section class="card">
-    <h2>Payment Profile</h2>
-
-    <div class="subsection">
-      <div class="actions">
-        <button onclick="createProfile()">POST /payment-profile/users/{id}</button>
-        <button onclick="getProfile()">GET /payment-profile/users/{id}</button>
-        <button onclick="deleteProfile()">DELETE /payment-profile/users/{id}</button>
-      </div>
-    </div>
-
-    <div class="subsection">
-      <h3>Update profile</h3>
-      <div class="fields">
-        <select id="profile-plan">
-          <option value="">plan (optional)</option>
-          <option>BASIC</option>
-          <option>PRO</option>
-          <option>PREMIUM</option>
-        </select>
-        <input id="profile-currency" placeholder="currency (optional)">
-        <select id="profile-status">
-          <option value="">paymentStatus (optional)</option>
-          <option>ACTIVE</option>
-          <option>CANCELLED</option>
-        </select>
-        <input id="profile-balance" type="number" placeholder="balanceInCents (optional)">
-      </div>
-      <div class="actions">
-        <button onclick="updateProfile()">PUT /payment-profile/users/{id}</button>
-      </div>
-    </div>
-
-    <div class="subsection">
-      <h3>Save payment result</h3>
-      <div class="fields">
-        <input id="payment-amount" type="number" placeholder="amountInCents">
-        <select id="payment-process-status">
-          <option value="">paymentProcessStatus</option>
-          <option>SUCCESS</option>
-          <option>FAILED</option>
-        </select>
-        <select id="payment-status">
-          <option value="">status</option>
-          <option>ACTIVE</option>
-          <option>CANCELLED</option>
-        </select>
-      </div>
-      <div class="actions">
-        <button onclick="savePaymentResult()">POST .../payment-result</button>
-      </div>
-    </div>
-  </section>
-
-</main>
-
-<div id="output-panel">
-  <div id="output-bar">
-    <span id="output-tag">ready</span>
-    <button onclick="clearOutput()">Clear</button>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('login')">Login</button>
+    <button class="tab"        onclick="switchTab('register')">Register</button>
   </div>
-  <pre id="output"></pre>
+
+  <form id="login-form" onsubmit="login(); return false;">
+    <label>User ID
+      <input id="login-userId" type="number" min="1" placeholder="your user id" required>
+    </label>
+    <label>Email
+      <input id="login-email" type="email" placeholder="you@example.com" required>
+    </label>
+    <label>Password
+      <input id="login-password" type="password" placeholder="password" required>
+    </label>
+    <button type="submit" class="btn-primary full">Sign in</button>
+    <p class="form-error" id="login-error"></p>
+  </form>
+
+  <form id="register-form" class="hidden" onsubmit="register(); return false;">
+    <label>Name
+      <input id="reg-name" placeholder="Alice" required>
+    </label>
+    <label>Email
+      <input id="reg-email" type="email" placeholder="you@example.com" required>
+    </label>
+    <label>Password
+      <input id="reg-password" type="password" placeholder="password" required>
+    </label>
+    <button type="submit" class="btn-primary full">Create account</button>
+    <p class="form-error" id="reg-error"></p>
+  </form>
 </div>
 
 <script src="app.js"></script>
