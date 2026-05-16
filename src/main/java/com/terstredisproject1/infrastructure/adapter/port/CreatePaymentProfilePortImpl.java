@@ -15,6 +15,9 @@ public class CreatePaymentProfilePortImpl implements CreatePaymentProfilePort {
 
     @Override
     public UserPaymentProfile execute(long userId) {
+        if (paymentProfileRepository.exists(userId)) {
+            throw new IllegalArgumentException("Payment profile already exists for user: " + userId);
+        }
         UserPaymentProfile userPaymentProfile = UserPaymentProfile.createDefault(userId);
         paymentProfileRepository.save(userPaymentProfile);
         log.info("Payment profile created for user: {}", userId);

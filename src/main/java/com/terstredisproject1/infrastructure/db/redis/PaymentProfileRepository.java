@@ -48,8 +48,8 @@ public class PaymentProfileRepository {
         stringRedisTemplate.opsForHash().put(getKey(userId), PAYMENT_STATUS_KEY, paymentStatus.name());
     }
 
-    public void incrementFailedPayments(Long userId) {
-        stringRedisTemplate.opsForHash().increment(getKey(userId), FAILED_PAYMENTS_COUNT_KEY, 1);
+    public long incrementFailedPayments(Long userId) {
+        return stringRedisTemplate.opsForHash().increment(getKey(userId), FAILED_PAYMENTS_COUNT_KEY, 1);
     }
 
     public boolean exists(long userId) {
