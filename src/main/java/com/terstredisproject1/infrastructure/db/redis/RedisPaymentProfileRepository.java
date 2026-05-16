@@ -14,7 +14,7 @@ import java.util.Objects;
 
 @Repository
 @RequiredArgsConstructor
-public class PaymentProfileRepository {
+public class RedisPaymentProfileRepository {
     private static final String USER_PAYMENT_PROFILE_KEY = "user:paymentProfile:";
     private static final String PAYMENT_STATUS_KEY = "paymentStatus";
     private static final String FAILED_PAYMENTS_COUNT_KEY = "failedPaymentsCount";

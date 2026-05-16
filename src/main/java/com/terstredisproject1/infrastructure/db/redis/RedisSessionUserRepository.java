@@ -11,7 +11,7 @@ import java.time.Duration;
 
 @Repository
 @RequiredArgsConstructor
-public class SessionUserRepository {
+public class RedisSessionUserRepository {
     @Value("${user.session.ttl.min:3}")
     private int sessionTTL;
 
