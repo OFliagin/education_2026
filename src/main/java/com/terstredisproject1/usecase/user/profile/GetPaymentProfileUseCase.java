@@ -14,14 +14,13 @@ public class GetPaymentProfileUseCase {
     private final GetPaymentProfilePort getPaymentProfilePort;
 
     public UserPaymentProfileResponse execute(long userId) {
-        final UserPaymentProfile execute = getPaymentProfilePort.execute(userId);
-        log.info("Payment profile retrieved for user: {}", userId);
-
-        return mapToResponse(execute);
+        return getPaymentProfilePort.execute(userId)
+                .map(this::mapToResponse)
+                .orElseThrow();
     }
 
     private UserPaymentProfileResponse mapToResponse(UserPaymentProfile execute) {
-        return new  UserPaymentProfileResponse(
+        return new UserPaymentProfileResponse(
                 execute.getPlan().name(),
                 execute.getCurrency(),
                 execute.getPaymentStatus().name(),

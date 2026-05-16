@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Repository
 @RequiredArgsConstructor
@@ -23,7 +24,7 @@ public class PaymentProfileRepository {
     public void save(UserPaymentProfile userPaymentProfile) {
         stringRedisTemplate.opsForHash().putAll(
                 getKey(userPaymentProfile.getUserId()),
-                mapToPaymentProfileIgnoreNullValue(userPaymentProfile)
+                mapToPaymentProfile(userPaymentProfile)
         );
     }
 
@@ -69,6 +70,7 @@ public class PaymentProfileRepository {
                 .balanceInCents(getParsedLong(paymentProfileMap, "balanceInCents"))
                 .lastPaymentAtEpochMillis(getParsedLong(paymentProfileMap, "lastPaymentAtEpochMillis"))
                 .nextBillingAtEpochMillis(getParsedLong(paymentProfileMap, "nextBillingAtEpochMillis"))
+                .failedPaymentsCount(getParsedInt(paymentProfileMap, "failedPaymentsCount"))
                 .build();
     }
 
@@ -82,6 +84,10 @@ public class PaymentProfileRepository {
 
     private static long getParsedLong(Map<Object, Object> paymentProfileMap, String key) {
         return Long.parseLong(getString(paymentProfileMap, key));
+    }
+
+    private static int getParsedInt(Map<Object, Object> paymentProfileMap, String key) {
+        return Integer.parseInt(getString(paymentProfileMap, key));
     }
 
     private static String getString(Map<Object, Object> paymentProfileMap, String key) {
@@ -120,6 +126,30 @@ public class PaymentProfileRepository {
         }
 
         return map;
+    }
+
+    private Map<String, String> mapToPaymentProfile(UserPaymentProfile profile) {
+        validateRequiredFields(profile);
+        return Map.of(
+            "userId", String.valueOf(profile.getUserId()),
+            "plan", profile.getPlan().name(),
+            "currency", profile.getCurrency(),
+            PAYMENT_STATUS_KEY, profile.getPaymentStatus().name(),
+            "balanceInCents", String.valueOf(profile.getBalanceInCents()),
+            "lastPaymentAtEpochMillis", String.valueOf(profile.getLastPaymentAtEpochMillis()),
+            "nextBillingAtEpochMillis", String.valueOf(profile.getNextBillingAtEpochMillis()),
+            FAILED_PAYMENTS_COUNT_KEY, String.valueOf(profile.getFailedPaymentsCount())
+        );
+    }
+
+    private static void validateRequiredFields(UserPaymentProfile profile) {
+        Objects.requireNonNull(profile.getPlan(), "plan must not be null");
+        Objects.requireNonNull(profile.getCurrency(), "currency must not be null");
+        Objects.requireNonNull(profile.getPaymentStatus(), "paymentStatus must not be null");
+        Objects.requireNonNull(profile.getBalanceInCents(), "balanceInCents must not be null");
+        Objects.requireNonNull(profile.getLastPaymentAtEpochMillis(), "lastPaymentAtEpochMillis must not be null");
+        Objects.requireNonNull(profile.getNextBillingAtEpochMillis(), "nextBillingAtEpochMillis must not be null");
+        Objects.requireNonNull(profile.getFailedPaymentsCount(), "failedPaymentsCount must not be null");
     }
 
 }
