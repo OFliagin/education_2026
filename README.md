@@ -43,6 +43,11 @@ Spring Boot сервис для ручного изучения основных
 - базовый CRUD для пользователей;
 - `@Cacheable` для чтения пользователя;
 - `@CachePut` для заполнения/обновления cache при `create` и `update`.
+- явный `RedisCacheConfiguration` с TTL из property;
+- базовый session-flow в Redis:
+  - login/logout;
+  - проверка online статуса;
+  - refresh TTL сессии.
 
 Важно: проект сейчас использует Redis Cluster на портах `7010-7015`, а не демонстрационные `7000-7002`.
 
@@ -54,8 +59,14 @@ Spring Boot сервис для ручного изучения основных
 spring.data.redis.cluster.nodes=localhost:7010,localhost:7011,localhost:7012,localhost:7013,localhost:7014,localhost:7015
 spring.cache.type=redis
 spring.cache.cache-names=users
-spring.cache.redis.time-to-live=30s
+cache.redis.ttl.sec=30
+user.session.ttl.min=3
 ```
+
+Примечание:
+
+- в проекте TTL cache задается через `CacheConfig` и property `cache.redis.ttl.sec`;
+- для user sessions TTL задается через `user.session.ttl.min`.
 
 ## Этап 1. Базовая инфраструктура
 
@@ -130,6 +141,8 @@ GET users::1
 - `TTL users::1 -> -1` означает, что ключ существует без expiration;
 - если задан кастомный `RedisCacheConfiguration`, TTL нужно указывать в Java config явно.
 
+Статус: `Done`.
+
 ## Этап 3. `RedisCacheConfiguration`
 
 ### Задача
@@ -167,6 +180,14 @@ GET users::1
 ### Важное замечание по текущему состоянию проекта
 
 Сейчас в проекте уже есть кастомный `RedisCacheConfiguration` для сериализации. Если он объявлен как бин, то `spring.cache.redis.time-to-live=30s` из properties больше не гарантирует TTL автоматически. В таком случае TTL нужно задать прямо в Java config через `.entryTtl(...)`.
+
+Фактическая реализация:
+
+- TTL cache задается через `cache.redis.ttl.sec`;
+- используется JSON value serializer и string key serializer;
+- `entryTtl(...)` уже применяется.
+
+Статус: `Done`.
 
 ## Этап 4. Manual cache через `RedisTemplate`
 
@@ -261,6 +282,15 @@ SMEMBERS online-users
 SISMEMBER online-users 1
 SCARD online-users
 ```
+
+Текущий прогресс:
+
+- реализованы endpoints:
+  - `GET /auth/online/{userId}`
+  - `POST /auth/refresh/{userId}`
+- текущая реализация session хранится по ключу `session:user:{id}` с TTL и проверкой через `EXISTS`, без отдельного `Set online-users`.
+
+Статус: `In progress` (функционально частично закрыт, структура данных пока не по плану этапа).
 
 ## Этап 7. Leaderboard через Sorted Set
 
@@ -443,9 +473,7 @@ user:{1}:settings
 
 ## Следующий практический шаг
 
-Ближайшая полезная задача для этого репозитория:
+Ближайшая полезная задача:
 
-1. Зафиксировать TTL явно в `RedisCacheConfiguration` через `.entryTtl(Duration.ofSeconds(30))`.
-2. Отключить caching `null` через `.disableCachingNullValues()`.
-3. Перезаписать cache key и проверить `TTL users::1`.
-4. После этого переходить к этапу 4 и сравнивать `@Cacheable` с `RedisTemplate`.
+1. Реализовать этап 4: manual cache через `RedisTemplate` для `user:{id}` и сравнить поведение с `@Cacheable`.
+2. После этого перейти к этапу 5 (Redis Hash для user profile), чтобы закрыть следующий слой хранения данных в Redis.
