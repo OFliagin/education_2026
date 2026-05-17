@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Redis Playground — Chat</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="app-page">
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-logo">⚡ Redis</span>
+      <span class="session-dot" id="session-dot" title="Session active"></span>
+    </div>
+
+    <div class="sidebar-user" id="sidebar-user">User #—</div>
+
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="billing.html">
+        <span class="nav-icon">💳</span> Billing
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-exit" onclick="logout()">Exit</button>
+    </div>
+  </aside>
+
+  <!-- Chat -->
+  <div class="chat-layout">
+    <div class="chat-header">
+      <span>AI Agent</span>
+      <span class="session-label" id="session-label">session active</span>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="message message--agent">
+        <div class="bubble">Hi! I'm your Redis Playground assistant. Ask me anything about your account or payments.</div>
+      </div>
+    </div>
+
+    <form class="chat-input-row" onsubmit="sendMessage(); return false;">
+      <input id="chat-input" placeholder="Type a message…" autocomplete="off">
+      <button type="submit" class="btn-send">Send</button>
+    </form>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

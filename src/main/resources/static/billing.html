@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Redis Playground — Billing</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="app-page">
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-logo">⚡ Redis</span>
+      <span class="session-dot" id="session-dot" title="Session active"></span>
+    </div>
+
+    <div class="sidebar-user" id="sidebar-user">User #—</div>
+
+    <nav class="sidebar-nav">
+      <a class="nav-item nav-item--active" href="billing.html">
+        <span class="nav-icon">💳</span> Billing
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-exit" onclick="logout()">Exit</button>
+    </div>
+  </aside>
+
+  <!-- Content -->
+  <div class="page-content">
+    <div class="page-header">
+      <a class="back-link" href="chat.html">← Back to chat</a>
+      <h1 class="page-title">Billing</h1>
+    </div>
+
+    <main>
+
+      <!-- Update profile -->
+      <div class="card">
+        <h2>Update profile</h2>
+        <div class="form-grid">
+          <label>Plan
+            <select id="upd-plan">
+              <option value="">— keep current —</option>
+              <option>BASIC</option>
+              <option>PRO</option>
+              <option>PREMIUM</option>
+            </select>
+          </label>
+          <label>Currency
+            <input id="upd-currency" placeholder="keep current">
+          </label>
+          <label>Payment status
+            <select id="upd-status">
+              <option value="">— keep current —</option>
+              <option>ACTIVE</option>
+              <option>CANCELLED</option>
+            </select>
+          </label>
+          <label>Balance (cents)
+            <input id="upd-balance" type="number" min="0" placeholder="keep current">
+          </label>
+        </div>
+        <button class="btn-primary" onclick="updateProfile()">Save changes</button>
+      </div>
+
+      <!-- Simulate payment -->
+      <div class="card">
+        <h2>Simulate payment</h2>
+        <label class="label-inline">Amount (cents)
+          <input id="pay-amount" type="number" min="0" placeholder="e.g. 2000" style="max-width:160px">
+        </label>
+        <div class="btn-row">
+          <button class="btn-success" onclick="simulatePayment('SUCCESS')">✓ Payment success</button>
+          <button class="btn-danger-outline" onclick="simulatePayment('FAILED')">✗ Payment failed</button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

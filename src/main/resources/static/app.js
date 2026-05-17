@@ -4,19 +4,28 @@ let refreshTimer = null;
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  const onProfile = document.getElementById('has-profile') !== null;
+  const page = detectPage();
 
-  if (onProfile) {
-    userId = parseInt(sessionStorage.getItem('userId'), 10);
-    if (!userId) { location.href = '/'; return; }
-    document.getElementById('user-chip').textContent = `User #${userId}`;
-    loadProfile();
-    startRefresh();
-  } else {
-    // on index.html — redirect to profile if already logged in
-    if (sessionStorage.getItem('userId')) location.href = '/profile.html';
+  if (page === 'auth') {
+    if (sessionStorage.getItem('userId')) location.href = '/chat.html';
+    return;
   }
+
+  userId = parseInt(sessionStorage.getItem('userId'), 10);
+  if (!userId) { location.href = '/'; return; }
+
+  document.getElementById('sidebar-user').textContent = `User #${userId}`;
+  startRefresh();
+
+  if (page === 'chat')    initChat();
+  if (page === 'billing') { /* forms are ready, no init needed */ }
 });
+
+function detectPage() {
+  if (document.getElementById('login-form'))  return 'auth';
+  if (document.getElementById('messages'))    return 'chat';
+  if (document.getElementById('upd-plan'))    return 'billing';
+}
 
 // ── API helper ─────────────────────────────────────────────────────────────
 async function api(method, url, body) {
@@ -36,57 +45,7 @@ async function api(method, url, body) {
   try { return JSON.parse(text); } catch { return text; }
 }
 
-// ── Tabs (index.html) ──────────────────────────────────────────────────────
-function switchTab(tab) {
-  const toLogin = tab === 'login';
-  document.getElementById('login-form').classList.toggle('hidden', !toLogin);
-  document.getElementById('register-form').classList.toggle('hidden', toLogin);
-  document.querySelectorAll('.tab').forEach((el, i) =>
-    el.classList.toggle('active', toLogin ? i === 0 : i === 1)
-  );
-  document.getElementById('login-error').textContent = '';
-  document.getElementById('reg-error').textContent   = '';
-}
-
-// ── Auth (index.html) ──────────────────────────────────────────────────────
-async function login() {
-  document.getElementById('login-error').textContent = '';
-  const id       = parseInt(document.getElementById('login-userId').value, 10);
-  const email    = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value;
-  try {
-    await api('POST', '/auth/login', { email, password });
-    sessionStorage.setItem('userId', id);
-    location.href = '/profile.html';
-  } catch (e) {
-    document.getElementById('login-error').textContent = e.message;
-  }
-}
-
-async function register() {
-  document.getElementById('reg-error').textContent = '';
-  const name     = document.getElementById('reg-name').value.trim();
-  const email    = document.getElementById('reg-email').value.trim();
-  const password = document.getElementById('reg-password').value;
-  try {
-    const id = await api('POST', '/users', { name, email, password });
-    await api('POST', '/auth/login', { email, password });
-    sessionStorage.setItem('userId', id);
-    location.href = '/profile.html';
-  } catch (e) {
-    document.getElementById('reg-error').textContent = e.message;
-  }
-}
-
-// ── Logout (profile.html) ──────────────────────────────────────────────────
-async function logout() {
-  stopRefresh();
-  try { await api('POST', `/auth/logout/${userId}`); } catch {}
-  sessionStorage.removeItem('userId');
-  location.href = '/';
-}
-
-// ── Session refresh every 15s (profile.html) ───────────────────────────────
+// ── Session refresh every 15s ──────────────────────────────────────────────
 function startRefresh() {
   refreshTimer = setInterval(async () => {
     try {
@@ -103,78 +62,116 @@ function stopRefresh() {
 function flashSession() {
   const dot   = document.getElementById('session-dot');
   const label = document.getElementById('session-label');
-  dot.classList.add('pulse');
-  label.textContent = 'refreshed';
-  setTimeout(() => {
-    dot.classList.remove('pulse');
-    label.textContent = 'session active';
-  }, 1500);
-}
-
-// ── Payment profile (profile.html) ────────────────────────────────────────
-async function loadProfile() {
-  try {
-    const profile = await api('GET', `/payment-profile/users/${userId}`);
-    renderProfile(profile);
-  } catch {
-    document.getElementById('no-profile').classList.remove('hidden');
-    document.getElementById('has-profile').classList.add('hidden');
+  dot?.classList.add('pulse');
+  if (label) {
+    label.textContent = 'refreshed';
+    setTimeout(() => { label.textContent = 'session active'; }, 1500);
   }
+  setTimeout(() => dot?.classList.remove('pulse'), 1500);
 }
 
-function renderProfile(p) {
-  document.getElementById('no-profile').classList.add('hidden');
-  document.getElementById('has-profile').classList.remove('hidden');
-
-  document.getElementById('info-plan').textContent     = p.plan;
-  document.getElementById('info-currency').textContent = p.currency;
-  document.getElementById('info-balance').textContent  =
-    `${(p.balanceInCents / 100).toFixed(2)} ${p.currency}`;
-  document.getElementById('info-last').textContent     = fmtDate(p.lastPaymentAtEpochMillis);
-  document.getElementById('info-next').textContent     = fmtDate(p.nextBillingAtEpochMillis);
-  document.getElementById('info-failed').textContent   = p.failedPaymentsCount;
-
-  const badge = document.getElementById('info-status');
-  badge.textContent = p.paymentStatus;
-  badge.className   = `badge ${p.paymentStatus === 'ACTIVE' ? 'badge--green' : 'badge--red'}`;
+// ── Auth (index.html) ──────────────────────────────────────────────────────
+function switchTab(tab) {
+  const toLogin = tab === 'login';
+  document.getElementById('login-form').classList.toggle('hidden', !toLogin);
+  document.getElementById('register-form').classList.toggle('hidden', toLogin);
+  document.querySelectorAll('.tab').forEach((el, i) =>
+    el.classList.toggle('active', toLogin ? i === 0 : i === 1)
+  );
+  document.getElementById('login-error').textContent = '';
+  document.getElementById('reg-error').textContent   = '';
 }
 
-async function createProfile() {
+async function login() {
+  document.getElementById('login-error').textContent = '';
+  const id       = parseInt(document.getElementById('login-userId').value, 10);
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
   try {
-    const profile = await api('POST', `/payment-profile/users/${userId}`);
-    renderProfile(profile);
-    toast('Profile created');
+    await api('POST', '/auth/login', { email, password });
+    sessionStorage.setItem('userId', id);
+    location.href = '/chat.html';
   } catch (e) {
-    toast(e.message, 'err');
+    document.getElementById('login-error').textContent = e.message;
   }
 }
 
+async function register() {
+  document.getElementById('reg-error').textContent = '';
+  const name     = document.getElementById('reg-name').value.trim();
+  const email    = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  try {
+    const id = await api('POST', '/users', { name, email, password });
+    await api('POST', '/auth/login', { email, password });
+    sessionStorage.setItem('userId', id);
+    location.href = '/chat.html';
+  } catch (e) {
+    document.getElementById('reg-error').textContent = e.message;
+  }
+}
+
+// ── Logout ─────────────────────────────────────────────────────────────────
+async function logout() {
+  stopRefresh();
+  try { await api('POST', `/auth/logout/${userId}`); } catch {}
+  sessionStorage.removeItem('userId');
+  location.href = '/';
+}
+
+// ── Chat (chat.html) ───────────────────────────────────────────────────────
+function initChat() {
+  document.getElementById('chat-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  appendMessage('user', text);
+  input.value = '';
+
+  const typing = appendMessage('agent', '…');
+  try {
+    const res = await api('POST', '/api/agent/message', { userId, message: text });
+    typing.querySelector('.bubble').textContent = res.response;
+  } catch (e) {
+    typing.querySelector('.bubble').textContent = `Error: ${e.message}`;
+    typing.querySelector('.bubble').classList.add('bubble--error');
+  }
+}
+
+function appendMessage(role, text) {
+  const list = document.getElementById('messages');
+  const el   = document.createElement('div');
+  el.className = `message message--${role}`;
+  el.innerHTML = `<div class="bubble">${escHtml(text)}</div>`;
+  list.appendChild(el);
+  list.scrollTop = list.scrollHeight;
+  return el;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Billing (billing.html) ─────────────────────────────────────────────────
 async function updateProfile() {
-  const body    = {};
-  const plan    = document.getElementById('upd-plan').value;
-  const cur     = document.getElementById('upd-currency').value.trim();
-  const status  = document.getElementById('upd-status').value;
-  const balance = document.getElementById('upd-balance').value;
-  if (plan)    body.plan           = plan;
-  if (cur)     body.currency       = cur;
-  if (status)  body.paymentStatus  = status;
-  if (balance) body.balanceInCents = parseInt(balance, 10);
+  const body   = {};
+  const plan   = document.getElementById('upd-plan').value;
+  const cur    = document.getElementById('upd-currency').value.trim();
+  const status = document.getElementById('upd-status').value;
+  const bal    = document.getElementById('upd-balance').value;
+  if (plan)   body.plan           = plan;
+  if (cur)    body.currency       = cur;
+  if (status) body.paymentStatus  = status;
+  if (bal)    body.balanceInCents = parseInt(bal, 10);
   try {
     await api('PUT', `/payment-profile/users/${userId}`, body);
-    await loadProfile();
     toast('Profile updated');
-  } catch (e) {
-    toast(e.message, 'err');
-  }
-}
-
-async function deleteProfile() {
-  if (!confirm('Delete payment profile?')) return;
-  try {
-    await api('DELETE', `/payment-profile/users/${userId}`);
-    document.getElementById('has-profile').classList.add('hidden');
-    document.getElementById('no-profile').classList.remove('hidden');
-    toast('Profile deleted');
   } catch (e) {
     toast(e.message, 'err');
   }
@@ -188,28 +185,26 @@ async function simulatePayment(result) {
       paymentProcessStatus: result,
       status:               result,
     });
-    await loadProfile();
-    toast(
-      result === 'SUCCESS' ? 'Payment success recorded' : 'Payment failure recorded',
-      result === 'SUCCESS' ? 'ok' : 'warn'
-    );
+    toast(result === 'SUCCESS' ? 'Payment success recorded' : 'Payment failure recorded',
+          result === 'SUCCESS' ? 'ok' : 'warn');
   } catch (e) {
     toast(e.message, 'err');
   }
 }
 
-// ── Utilities ──────────────────────────────────────────────────────────────
-function fmtDate(epochMs) {
-  return new Date(epochMs).toLocaleDateString('en-GB', {
-    day: '2-digit', month: 'short', year: 'numeric',
-  });
-}
-
+// ── Toast ──────────────────────────────────────────────────────────────────
 let toastTimer = null;
 function toast(msg, type = 'ok') {
   const el = document.getElementById('toast');
+  if (!el) return;
   el.textContent = msg;
   el.className = `toast toast--${type}`;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { el.className = 'toast hidden'; }, 3000);
+}
+
+function fmtDate(epochMs) {
+  return new Date(epochMs).toLocaleDateString('en-GB', {
+    day: '2-digit', month: 'short', year: 'numeric',
+  });
 }
