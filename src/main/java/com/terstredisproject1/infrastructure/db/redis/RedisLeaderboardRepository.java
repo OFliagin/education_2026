@@ -19,7 +19,7 @@ public class RedisLeaderboardRepository {
     public long incrementScore(long userId) {
         final Double scoreAfterIncrement = stringRedisTemplate.opsForZSet()
                                                     .incrementScore(LEADERBOARD_KEY, String.valueOf(userId), 10);
-        return scoreAfterIncrement.longValue();
+        return scoreAfterIncrement == null ? 0L : scoreAfterIncrement.longValue();
     }
 
 

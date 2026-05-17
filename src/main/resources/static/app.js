@@ -222,7 +222,7 @@ async function loadContextWindow() {
     document.getElementById('ctx-score').textContent = s;
     document.getElementById('ctx-rank').textContent  = `#${r}`;
     document.getElementById('context-text').textContent =
-      `You've sent ${s} message${s !== 1 ? 's' : ''}. ` +
+      `Your AI activity score is ${s}. ` +
       `You're ranked #${r} among all chat users.`;
   } catch {
     document.getElementById('context-text').textContent = 'Stats unavailable.';
