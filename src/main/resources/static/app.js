@@ -217,10 +217,10 @@ async function loadContextWindow() {
     ]);
 
     const s = score ?? 0;
-    const r = rank != null ? rank : '—'; // rank is 1-based (converted on backend)
+    const r = rank != null ? rank : '—'; // rank is already 1-based
 
     document.getElementById('ctx-score').textContent = s;
-    document.getElementById('ctx-rank').textContent  = `#${r}`;
+    document.getElementById('ctx-rank').textContent  = r === '—' ? '—' : `#${r}`;
     document.getElementById('context-text').textContent =
       `Your AI activity score is ${s}. ` +
       `You're ranked #${r} among all chat users.`;
