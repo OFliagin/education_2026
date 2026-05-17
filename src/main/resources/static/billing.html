@@ -19,6 +19,9 @@
     <div class="sidebar-user" id="sidebar-user">User #—</div>
 
     <nav class="sidebar-nav">
+      <a class="nav-item" href="chat.html">
+        <span class="nav-icon">💬</span> Chat
+      </a>
       <a class="nav-item nav-item--active" href="billing.html">
         <span class="nav-icon">💳</span> Billing
       </a>
@@ -32,11 +35,47 @@
   <!-- Content -->
   <div class="page-content">
     <div class="page-header">
-      <a class="back-link" href="chat.html">← Back to chat</a>
       <h1 class="page-title">Billing</h1>
     </div>
 
     <main>
+
+      <!-- Profile info -->
+      <div class="card" id="profile-info-card">
+        <h2>Profile info</h2>
+        <div id="profile-loading" class="profile-placeholder">Loading…</div>
+        <div id="profile-data" class="stats-grid hidden">
+          <div class="stat">
+            <span class="stat-label">Plan</span>
+            <span class="stat-value" id="info-plan">—</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Status</span>
+            <span class="badge" id="info-status">—</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Currency</span>
+            <span class="stat-value" id="info-currency">—</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Balance</span>
+            <span class="stat-value" id="info-balance">—</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Last payment</span>
+            <span class="stat-value stat-value--sm" id="info-last">—</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Next billing</span>
+            <span class="stat-value stat-value--sm" id="info-next">—</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Failed payments</span>
+            <span class="stat-value" id="info-failed">—</span>
+          </div>
+        </div>
+        <div id="profile-empty" class="profile-placeholder hidden">No payment profile yet.</div>
+      </div>
 
       <!-- Update profile -->
       <div class="card">

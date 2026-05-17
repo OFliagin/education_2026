@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
   startRefresh();
 
   if (page === 'chat')    initChat();
-  if (page === 'billing') { /* forms are ready, no init needed */ }
+  if (page === 'billing') loadProfileInfo();
 });
 
 function detectPage() {
@@ -159,6 +159,31 @@ function escHtml(s) {
 }
 
 // ── Billing (billing.html) ─────────────────────────────────────────────────
+async function loadProfileInfo() {
+  try {
+    const p = await api('GET', `/payment-profile/users/${userId}`);
+    document.getElementById('profile-loading').classList.add('hidden');
+    document.getElementById('profile-empty').classList.add('hidden');
+    document.getElementById('profile-data').classList.remove('hidden');
+
+    document.getElementById('info-plan').textContent     = p.plan;
+    document.getElementById('info-currency').textContent = p.currency;
+    document.getElementById('info-balance').textContent  =
+      `${(p.balanceInCents / 100).toFixed(2)} ${p.currency}`;
+    document.getElementById('info-last').textContent     = fmtDate(p.lastPaymentAtEpochMillis);
+    document.getElementById('info-next').textContent     = fmtDate(p.nextBillingAtEpochMillis);
+    document.getElementById('info-failed').textContent   = p.failedPaymentsCount;
+
+    const badge = document.getElementById('info-status');
+    badge.textContent = p.paymentStatus;
+    badge.className   = `badge ${p.paymentStatus === 'ACTIVE' ? 'badge--green' : 'badge--red'}`;
+  } catch {
+    document.getElementById('profile-loading').classList.add('hidden');
+    document.getElementById('profile-data').classList.add('hidden');
+    document.getElementById('profile-empty').classList.remove('hidden');
+  }
+}
+
 async function updateProfile() {
   const body   = {};
   const plan   = document.getElementById('upd-plan').value;
@@ -171,6 +196,7 @@ async function updateProfile() {
   if (bal)    body.balanceInCents = parseInt(bal, 10);
   try {
     await api('PUT', `/payment-profile/users/${userId}`, body);
+    await loadProfileInfo();
     toast('Profile updated');
   } catch (e) {
     toast(e.message, 'err');
@@ -185,6 +211,7 @@ async function simulatePayment(result) {
       paymentProcessStatus: result,
       status:               result,
     });
+    await loadProfileInfo();
     toast(result === 'SUCCESS' ? 'Payment success recorded' : 'Payment failure recorded',
           result === 'SUCCESS' ? 'ok' : 'warn');
   } catch (e) {
