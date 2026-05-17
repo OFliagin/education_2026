@@ -9,11 +9,11 @@
 
 <div class="layout">
 
-  <!-- Sidebar -->
+  <!-- ── Sidebar ── -->
   <aside class="sidebar">
     <div class="sidebar-header">
       <span class="sidebar-logo">⚡ AI Agent Chat</span>
-      <span class="session-dot" id="session-dot" title="Session active"></span>
+      <span class="session-dot" id="session-dot"></span>
     </div>
 
     <div class="sidebar-user" id="sidebar-user">User #—</div>
@@ -27,12 +27,28 @@
       </a>
     </nav>
 
+    <!-- Context Window -->
+    <div class="context-window">
+      <div class="context-title">Context Window</div>
+      <p class="context-text" id="context-text">Loading your stats…</p>
+      <div class="context-stats">
+        <div class="context-stat">
+          <span class="context-stat-label">Score</span>
+          <span class="context-stat-value" id="ctx-score">—</span>
+        </div>
+        <div class="context-stat">
+          <span class="context-stat-label">Rank</span>
+          <span class="context-stat-value" id="ctx-rank">—</span>
+        </div>
+      </div>
+    </div>
+
     <div class="sidebar-footer">
       <button class="btn-exit" onclick="logout()">Exit</button>
     </div>
   </aside>
 
-  <!-- Chat -->
+  <!-- ── Chat ── -->
   <div class="chat-layout">
     <div class="chat-header">
       <span>AI Agent</span>
@@ -41,7 +57,7 @@
 
     <div class="messages" id="messages">
       <div class="message message--agent">
-        <div class="bubble">Hi! I'm your Redis Playground assistant. Ask me anything about your account or payments.</div>
+        <div class="bubble">Hi! I'm your AI Agent Chat assistant. Ask me anything about your account or payments.</div>
       </div>
     </div>
 
@@ -49,6 +65,23 @@
       <input id="chat-input" placeholder="Type a message…" autocomplete="off">
       <button type="submit" class="btn-send">Send</button>
     </form>
+  </div>
+
+  <!-- ── Leaderboard panel ── -->
+  <div class="leaderboard-panel">
+    <div class="lb-header">
+      <span class="lb-title">🏆 Leaderboard</span>
+    </div>
+
+    <div class="lb-list" id="lb-list">
+      <div class="lb-placeholder">Loading…</div>
+    </div>
+
+    <div class="lb-pagination">
+      <button class="lb-btn" id="lb-prev" onclick="lbPrev()" disabled>← Prev</button>
+      <span class="lb-page" id="lb-page">1</span>
+      <button class="lb-btn" id="lb-next" onclick="lbNext()">Next →</button>
+    </div>
   </div>
 
 </div>

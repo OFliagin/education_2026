@@ -1,6 +1,8 @@
 // ── State ──────────────────────────────────────────────────────────────────
 let userId = null;
 let refreshTimer = null;
+let lbOffset = 0;
+const LB_LIMIT = 10;
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -17,7 +19,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('sidebar-user').textContent = `User #${userId}`;
   startRefresh();
 
-  if (page === 'chat')    initChat();
+  if (page === 'chat') {
+    initChat();
+    loadLeaderboard();
+    loadContextWindow();
+  }
   if (page === 'billing') loadProfileInfo();
 });
 
@@ -55,9 +61,7 @@ function startRefresh() {
   }, 15000);
 }
 
-function stopRefresh() {
-  clearInterval(refreshTimer);
-}
+function stopRefresh() { clearInterval(refreshTimer); }
 
 function flashSession() {
   const dot   = document.getElementById('session-dot');
@@ -134,6 +138,11 @@ async function sendMessage() {
   appendMessage('user', text);
   input.value = '';
 
+  // increment leaderboard score on every message sent
+  api('GET', `/leaderboard/user/${userId}/increment`)
+    .then(() => { loadLeaderboard(); loadContextWindow(); })
+    .catch(() => {});
+
   const typing = appendMessage('agent', '…');
   try {
     const res = await api('POST', '/api/agent/message', { userId, message: text });
@@ -155,7 +164,69 @@ function appendMessage(role, text) {
 }
 
 function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ── Leaderboard (chat.html) ────────────────────────────────────────────────
+async function loadLeaderboard() {
+  try {
+    const users = await api('GET', `/leaderboard?limit=${LB_LIMIT}&offset=${lbOffset}`);
+    renderLeaderboard(users);
+  } catch {
+    document.getElementById('lb-list').innerHTML =
+      '<div class="lb-placeholder">Failed to load.</div>';
+  }
+}
+
+function renderLeaderboard(users) {
+  const list = document.getElementById('lb-list');
+  if (!users.length) {
+    list.innerHTML = '<div class="lb-placeholder">No data yet.</div>';
+    return;
+  }
+  list.innerHTML = users.map(u => `
+    <div class="lb-row ${u.userId === userId ? 'lb-row--me' : ''}">
+      <span class="lb-rank">#${u.rank}</span>
+      <span class="lb-name">${escHtml(u.username)}</span>
+      <span class="lb-score">${u.score}</span>
+    </div>`).join('');
+
+  const page = Math.floor(lbOffset / LB_LIMIT) + 1;
+  document.getElementById('lb-page').textContent = `Page ${page}`;
+  document.getElementById('lb-prev').disabled = lbOffset === 0;
+  document.getElementById('lb-next').disabled = users.length < LB_LIMIT;
+}
+
+function lbPrev() {
+  if (lbOffset === 0) return;
+  lbOffset = Math.max(0, lbOffset - LB_LIMIT);
+  loadLeaderboard();
+}
+
+function lbNext() {
+  lbOffset += LB_LIMIT;
+  loadLeaderboard();
+}
+
+// ── Context Window (chat.html) ─────────────────────────────────────────────
+async function loadContextWindow() {
+  try {
+    const [score, rank] = await Promise.all([
+      api('GET', `/leaderboard/user/${userId}/score`),
+      api('GET', `/leaderboard/user/${userId}/rank`),
+    ]);
+
+    const s = score ?? 0;
+    const r = rank != null ? rank + 1 : '—'; // rank is 0-based
+
+    document.getElementById('ctx-score').textContent = s;
+    document.getElementById('ctx-rank').textContent  = `#${r}`;
+    document.getElementById('context-text').textContent =
+      `You've sent ${s} message${s !== 1 ? 's' : ''}. ` +
+      `You're ranked #${r} among all chat users.`;
+  } catch {
+    document.getElementById('context-text').textContent = 'Stats unavailable.';
+  }
 }
 
 // ── Billing (billing.html) ─────────────────────────────────────────────────
@@ -219,7 +290,13 @@ async function simulatePayment(result) {
   }
 }
 
-// ── Toast ──────────────────────────────────────────────────────────────────
+// ── Utilities ──────────────────────────────────────────────────────────────
+function fmtDate(epochMs) {
+  return new Date(epochMs).toLocaleDateString('en-GB', {
+    day: '2-digit', month: 'short', year: 'numeric',
+  });
+}
+
 let toastTimer = null;
 function toast(msg, type = 'ok') {
   const el = document.getElementById('toast');
@@ -228,10 +305,4 @@ function toast(msg, type = 'ok') {
   el.className = `toast toast--${type}`;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { el.className = 'toast hidden'; }, 3000);
-}
-
-function fmtDate(epochMs) {
-  return new Date(epochMs).toLocaleDateString('en-GB', {
-    day: '2-digit', month: 'short', year: 'numeric',
-  });
 }
