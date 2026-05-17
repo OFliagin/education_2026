@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (page === 'auth') {
     if (sessionStorage.getItem('userId')) location.href = '/chat.html';
+    loadLeaderboard();
     return;
   }
 
@@ -21,7 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (page === 'chat') {
     initChat();
-    loadLeaderboard();
     loadContextWindow();
   }
   if (page === 'billing') loadProfileInfo();
@@ -140,7 +140,7 @@ async function sendMessage() {
 
   // increment leaderboard score on every message sent
   api('GET', `/leaderboard/user/${userId}/increment`)
-    .then(() => { loadLeaderboard(); loadContextWindow(); })
+    .then(() => loadContextWindow())
     .catch(() => {});
 
   const typing = appendMessage('agent', '…');
