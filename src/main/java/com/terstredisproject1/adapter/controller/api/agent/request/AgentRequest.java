@@ -1,4 +1,6 @@
 package com.terstredisproject1.adapter.controller.api.agent.request;
 
-public record AgentRequest(Long userId, String message) {
+import jakarta.validation.constraints.NotNull;
+
+public record AgentRequest(@NotNull Long userId, @NotNull String message) {
 }
