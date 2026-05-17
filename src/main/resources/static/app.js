@@ -217,7 +217,7 @@ async function loadContextWindow() {
     ]);
 
     const s = score ?? 0;
-    const r = rank != null ? rank + 1 : '—'; // rank is 0-based
+    const r = rank != null ? rank  : '—'; // rank is 0-based
 
     document.getElementById('ctx-score').textContent = s;
     document.getElementById('ctx-rank').textContent  = `#${r}`;

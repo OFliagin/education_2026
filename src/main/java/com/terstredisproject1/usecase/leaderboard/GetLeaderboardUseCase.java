@@ -29,7 +29,7 @@ public class GetLeaderboardUseCase {
         info.setUsername(user1.getUsername());
     }
 
-    public long getRank(long userId) {
+    public Long getRank(long userId) {
         log.info("Getting rank for user with id: {}", userId);
         return getLeaderboardPort.getRank(userId);
     }

@@ -28,16 +28,18 @@ public class RedisLeaderboardRepository {
                 .map(Double::longValue).orElse(0L);
     }
 
-    public int getUserPosition(long userId) {
+    public Long getUserPosition(long userId) {
         return Optional.ofNullable(stringRedisTemplate.opsForZSet().reverseRank(LEADERBOARD_KEY, String.valueOf(userId)))
-                .map(Long::intValue).orElse(0);
+                .map(rank -> rank + 1).orElse(null);
     }
 
     public List<LeaderboardUserInfo> getTop(int limit, int offset) {
+        long start = offset;
+        long end = offset + limit - 1;
         final Set<ZSetOperations.@NonNull TypedTuple<String>> typedTuples = stringRedisTemplate.opsForZSet()
-                                                            .reverseRangeWithScores(LEADERBOARD_KEY, offset, (limit - 1));
+                                                            .reverseRangeWithScores(LEADERBOARD_KEY, start, end);
         List<LeaderboardUserInfo> topUsers = new ArrayList<>();
-        int rank = 1;
+        int rank = offset + 1;
         if (typedTuples != null) {
             for (ZSetOperations.TypedTuple<String> tuple : typedTuples) {
                 String userId = tuple.getValue();

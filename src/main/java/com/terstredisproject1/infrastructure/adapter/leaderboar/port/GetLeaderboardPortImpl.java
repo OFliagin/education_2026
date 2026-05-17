@@ -15,7 +15,7 @@ public class GetLeaderboardPortImpl implements GetLeaderboardPort {
 
 
     @Override
-    public long getRank(long userId) {
+    public Long getRank(long userId) {
         return redisLeaderboardRepository.getUserPosition(userId);
     }
 

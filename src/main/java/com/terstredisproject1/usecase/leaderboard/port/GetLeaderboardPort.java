@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface GetLeaderboardPort {
 
-    long getRank(long userId);
+    Long getRank(long userId);
 
     List<LeaderboardUserInfo> getTopUsers(int limit, int offset);
 
