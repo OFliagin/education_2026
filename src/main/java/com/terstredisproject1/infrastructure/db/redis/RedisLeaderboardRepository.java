@@ -29,7 +29,7 @@ public class RedisLeaderboardRepository {
     }
 
     public int getUserPosition(long userId) {
-        return Optional.ofNullable(stringRedisTemplate.opsForZSet().rank(LEADERBOARD_KEY, String.valueOf(userId)))
+        return Optional.ofNullable(stringRedisTemplate.opsForZSet().reverseRank(LEADERBOARD_KEY, String.valueOf(userId)))
                 .map(Long::intValue).orElse(0);
     }
 
