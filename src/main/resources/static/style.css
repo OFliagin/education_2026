@@ -458,6 +458,57 @@ button { cursor: pointer; font-family: inherit; }
   color: #e2e8f0;
 }
 
+/* ── Token usage bar ── */
+.context-tokens {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid rgba(255,255,255,.06);
+  padding-top: 10px;
+}
+
+.context-token-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.context-token-total {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.token-bar {
+  height: 5px;
+  background: rgba(255,255,255,.1);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.token-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+  transition: width .4s ease;
+}
+.token-bar-fill--warn   { background: #f59e0b; }
+.token-bar-fill--danger { background: var(--red); }
+
+.context-token-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.context-token-renew {
+  font-size: 10px;
+  color: #475569;
+  font-style: italic;
+}
+
 /* ── Leaderboard ── */
 .lb-header {
   padding: 14px 16px;

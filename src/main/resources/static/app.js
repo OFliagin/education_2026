@@ -138,10 +138,7 @@ async function sendMessage() {
   appendMessage('user', text);
   input.value = '';
 
-  // increment leaderboard score on every message sent
-  api('POST', `/leaderboard/user/${userId}/score/increment`)
-    .then(() => loadContextWindow())
-    .catch(() => {});
+  api('POST', `/leaderboard/user/${userId}/score/increment`).catch(() => {});
 
   const typing = appendMessage('agent', '…');
   try {
@@ -150,6 +147,8 @@ async function sendMessage() {
   } catch (e) {
     typing.querySelector('.bubble').textContent = `Error: ${e.message}`;
     typing.querySelector('.bubble').classList.add('bubble--error');
+  } finally {
+    loadContextWindow();
   }
 }
 
@@ -211,19 +210,32 @@ function lbNext() {
 // ── Context Window (chat.html) ─────────────────────────────────────────────
 async function loadContextWindow() {
   try {
-    const [score, rank] = await Promise.all([
+    const [score, rank, tokens] = await Promise.all([
       api('GET', `/leaderboard/user/${userId}/score`),
       api('GET', `/leaderboard/user/${userId}/rank`),
+      api('GET', `/api/agent/user/${userId}/token-usage`),
     ]);
 
     const s = score ?? 0;
-    const r = rank != null ? rank : '—'; // rank is already 1-based
+    const r = rank != null ? rank : '—';
 
     document.getElementById('ctx-score').textContent = s;
     document.getElementById('ctx-rank').textContent  = r === '—' ? '—' : `#${r}`;
     document.getElementById('context-text').textContent =
       `Your AI activity score is ${s}. ` +
       `You're ranked #${r} among all chat users.`;
+
+    if (tokens) {
+      const used  = tokens.usedTokens  ?? 0;
+      const total = tokens.totalTokens ?? 0;
+      const pct   = total > 0 ? Math.min(100, Math.round(used / total * 100)) : 0;
+
+      document.getElementById('ctx-token-used').textContent  = used;
+      document.getElementById('ctx-token-total').textContent = `${total} total`;
+      document.getElementById('ctx-token-bar').style.width   = `${pct}%`;
+      document.getElementById('ctx-token-bar').className     =
+        'token-bar-fill' + (pct >= 90 ? ' token-bar-fill--danger' : pct >= 70 ? ' token-bar-fill--warn' : '');
+    }
   } catch {
     document.getElementById('context-text').textContent = 'Stats unavailable.';
   }
