@@ -5,6 +5,7 @@ import com.terstredisproject1.usecase.leaderboard.GetLeaderboardUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -30,8 +31,8 @@ public class LeaderboardController {
         return getLeaderboardUseCase.getRank(userId);
     }
 
-    @GetMapping("/leaderboard/user/{userId}/increment")
-    public Long incrementScore(@PathVariable long userId) {
-        return getLeaderboardUseCase.incrementScore(userId);
+    @PostMapping("/leaderboard/user/{id}/score/increment")
+    public Long incrementScore(@PathVariable long id) {
+        return getLeaderboardUseCase.incrementScore(id);
     }
 }

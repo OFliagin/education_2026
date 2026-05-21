@@ -139,7 +139,7 @@ async function sendMessage() {
   input.value = '';
 
   // increment leaderboard score on every message sent
-  api('GET', `/leaderboard/user/${userId}/increment`)
+  api('POST', `/leaderboard/user/${userId}/score/increment`)
     .then(() => loadContextWindow())
     .catch(() => {});
 
