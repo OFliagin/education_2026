@@ -1,6 +1,5 @@
 package com.terstredisproject1.usecase.leaderboard;
 
-import com.terstredisproject1.domain.model.User;
 import com.terstredisproject1.domain.model.leaderboard.LeaderboardUserInfo;
 import com.terstredisproject1.usecase.leaderboard.port.GetLeaderboardPort;
 import com.terstredisproject1.usecase.user.port.GetUserPort;
@@ -20,13 +19,13 @@ public class GetLeaderboardUseCase {
     public List<LeaderboardUserInfo> getTopUsers(int limit, int offset) {
         log.info("Getting top users with limit: {} and offset: {}", limit, offset);
         return getLeaderboardPort.getTopUsers(limit, offset).stream()
-                .peek(this::setUserName)
+                .map(this::withUsername)
                 .toList();
     }
 
-    private void setUserName(LeaderboardUserInfo info) {
-        final User user1 = getUserPort.getUser(info.getUserId());
-        info.setUsername(user1.getUsername());
+    private LeaderboardUserInfo withUsername(LeaderboardUserInfo info) {
+        final String username = getUserPort.getUser(info.userId()).getUsername();
+        return new LeaderboardUserInfo(info.rank(), info.userId(), username, info.score());
     }
 
     public Long getRank(long userId) {

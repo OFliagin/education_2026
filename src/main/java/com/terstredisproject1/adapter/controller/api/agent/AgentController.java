@@ -22,7 +22,9 @@ public class AgentController {
 
     @PostMapping("/api/agent/message")
     public AgentResponse getAgentResponse(@Valid @RequestBody AgentRequest request) {
-        return getMessageUseCase.execute(request);
+        final var result = getMessageUseCase.execute(request.userId(), request.message());
+        return new AgentResponse(request.userId(), request.message(), result.message());
+
     }
 
     @GetMapping("/api/agent/user/{userId}/token-usage")

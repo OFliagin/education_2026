@@ -1,6 +1,5 @@
 package com.terstredisproject1.infrastructure.adapter.agent.port;
 
-
 import com.terstredisproject1.domain.model.agent.AgentResult;
 import com.terstredisproject1.infrastructure.db.redis.RedisTokenRepository;
 import com.terstredisproject1.usecase.agent.port.GetMessagePort;
@@ -15,20 +14,15 @@ import org.springframework.stereotype.Component;
 public class GetMessagePortImpl implements GetMessagePort {
     private final RedisTokenRepository redisTokenRepository;
 
-
     @Override
     public AgentResult execute(long userId, String message) {
         if (StringUtils.isBlank(message)) {
-            return AgentResult.builder()
-                    .message("Please ask a question")
-                    .build();
+            return new AgentResult("Please ask a question");
         }
 
         updateTokenUsage(userId, message);
 
-        return AgentResult.builder()
-                .message("Great question:" + message)
-                .build();
+        return new AgentResult("Great question:" + message);
     }
 
     private void updateTokenUsage(long userId, String message) {
@@ -40,5 +34,4 @@ public class GetMessagePortImpl implements GetMessagePort {
     private long calculateTokenUsage(String message) {
         return (long) Math.ceil(message.length() / 50.0) * 10;
     }
-
 }

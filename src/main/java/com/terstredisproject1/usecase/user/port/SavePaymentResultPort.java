@@ -1,7 +1,8 @@
 package com.terstredisproject1.usecase.user.port;
 
-import com.terstredisproject1.domain.model.PaymentProcessStatus;
-
 public interface SavePaymentResultPort {
-    void savePaymentResult(long userId, Long amountInCents, PaymentProcessStatus status);
+    boolean profileExists(long userId);
+    void recordSuccess(long userId, Long amountInCents);
+    long recordFailure(long userId);
+    void markPastDue(long userId);
 }

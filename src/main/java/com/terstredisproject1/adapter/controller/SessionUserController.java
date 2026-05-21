@@ -19,7 +19,7 @@ public class SessionUserController {
 
     @PostMapping("/auth/login")
     public void login(@Valid @RequestBody LoginUserRequest loginUserRequest) {
-        loginUserUseCase.execute(loginUserRequest);
+        loginUserUseCase.execute(loginUserRequest.email(), loginUserRequest.password());
     }
 
     @PostMapping("/auth/logout/{userId}")

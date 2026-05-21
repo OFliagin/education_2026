@@ -1,6 +1,5 @@
 package com.terstredisproject1.infrastructure.adapter.port;
 
-import com.terstredisproject1.domain.model.PaymentProcessStatus;
 import com.terstredisproject1.domain.model.PaymentStatus;
 import com.terstredisproject1.domain.model.UserPaymentProfile;
 import com.terstredisproject1.infrastructure.db.redis.RedisPaymentProfileRepository;
@@ -14,18 +13,22 @@ public class SavePaymentResultPortImpl implements SavePaymentResultPort {
     private final RedisPaymentProfileRepository redisPaymentProfileRepository;
 
     @Override
-    public void savePaymentResult(long userId, Long amountInCents, PaymentProcessStatus status) {
-        if (!redisPaymentProfileRepository.exists(userId)) {
-            throw new IllegalArgumentException("User payment profile does not exist for userId: " + userId);
-        }
-        if (status == PaymentProcessStatus.SUCCESS) {
-            redisPaymentProfileRepository.update(UserPaymentProfile.updateAfterSucceed(userId, amountInCents));
-        } else {
-            final long failedCount = redisPaymentProfileRepository.incrementFailedPayments(userId);
+    public boolean profileExists(long userId) {
+        return redisPaymentProfileRepository.exists(userId);
+    }
 
-            if (failedCount >= 3) {
-                redisPaymentProfileRepository.updatePaymentStatus(userId, PaymentStatus.PAST_DUE);
-            }
-        }
+    @Override
+    public void recordSuccess(long userId, Long amountInCents) {
+        redisPaymentProfileRepository.update(UserPaymentProfile.updateAfterSucceed(userId, amountInCents));
+    }
+
+    @Override
+    public long recordFailure(long userId) {
+        return redisPaymentProfileRepository.incrementFailedPayments(userId);
+    }
+
+    @Override
+    public void markPastDue(long userId) {
+        redisPaymentProfileRepository.updatePaymentStatus(userId, PaymentStatus.PAST_DUE);
     }
 }

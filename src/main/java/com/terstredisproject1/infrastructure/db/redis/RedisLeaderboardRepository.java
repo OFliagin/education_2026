@@ -47,11 +47,7 @@ public class RedisLeaderboardRepository {
                 if (StringUtils.isBlank(userId) || score == null) {
                     continue;
                 }
-                topUsers.add(LeaderboardUserInfo.builder()
-                        .rank(rank++)
-                        .userId(Long.parseLong(userId))
-                        .score(score.intValue())
-                        .build());
+                topUsers.add(new LeaderboardUserInfo(rank++, Long.parseLong(userId), null, score.intValue()));
             }
         }
         return topUsers;
