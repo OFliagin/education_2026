@@ -27,10 +27,22 @@ public class GetTokenUsagePortImpl implements GetTokenUsagePort {
             throw new IllegalStateException("Payment profile not found for user " + userId);
         }
         final long totalTokens = paymentProfile.getPlan().getAvailableTokens();
-        final long remainingTokens = totalTokens - tokenUsage;
-        final int usagePercent = (int) ((tokenUsage * 100.0) / totalTokens);
+        final long remainingTokens = calculateRemainingTokens(totalTokens, tokenUsage);
+        final int usagePercent = calculateTokenUsagePercentage(tokenUsage, totalTokens);
         final boolean limitExceeded = tokenUsage >= totalTokens;
         log.info("Token usage retrieved for user: {} - Available tokens: {}, Used tokens: {}, Usage percent: {}, Limit exceeded: {}", userId, totalTokens, tokenUsage, usagePercent, limitExceeded);
         return new TokenUsage(totalTokens, tokenUsage, usagePercent, remainingTokens, limitExceeded);
+    }
+
+    private static long calculateRemainingTokens(long totalTokens, long tokenUsage) {
+        final long remainingTokens = totalTokens - tokenUsage;
+        return remainingTokens < 0 ? 0 : remainingTokens;
+    }
+
+    private static int calculateTokenUsagePercentage(long tokenUsage, long totalTokens) {
+        return (int) Math.min(
+                100,
+                (tokenUsage * 100.0) / totalTokens
+        );
     }
 }
