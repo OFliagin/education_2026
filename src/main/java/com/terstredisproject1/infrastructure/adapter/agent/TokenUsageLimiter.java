@@ -13,9 +13,9 @@ public class TokenUsageLimiter {
     private final RedisPaymentProfileRepository redisPaymentProfileRepository;
 
 
-    public boolean isLimitRich(long userId, long tokenUsage) {
-        val tokenUsad = redisTokenRepository.getTokenUsage(userId);
+    public boolean isTokenUsageExceeded(long userId, long tokenUsage) {
+        val tokenUsed = redisTokenRepository.getTokenUsage(userId);
         val availableTokens = redisPaymentProfileRepository.findByUserId(userId).getPlan().getAvailableTokens();
-        return tokenUsad >= availableTokens || tokenUsage + tokenUsad > availableTokens;
+        return tokenUsed >= availableTokens || tokenUsage + tokenUsed > availableTokens;
     }
 }

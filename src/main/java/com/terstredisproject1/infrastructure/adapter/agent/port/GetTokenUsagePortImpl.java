@@ -40,6 +40,9 @@ public class GetTokenUsagePortImpl implements GetTokenUsagePort {
     }
 
     private static int calculateTokenUsagePercentage(long tokenUsage, long totalTokens) {
+        if (totalTokens == 0) {
+            return 0;
+        }
         return (int) Math.min(
                 100,
                 (tokenUsage * 100.0) / totalTokens

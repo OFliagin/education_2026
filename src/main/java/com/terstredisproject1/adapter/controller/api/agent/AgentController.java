@@ -3,7 +3,7 @@ package com.terstredisproject1.adapter.controller.api.agent;
 import com.terstredisproject1.adapter.controller.api.agent.request.AgentRequest;
 import com.terstredisproject1.adapter.controller.api.agent.response.AgentResponse;
 import com.terstredisproject1.adapter.controller.api.agent.response.TokenUsageResponse;
-import com.terstredisproject1.domain.exception.TokenLimitReachException;
+import com.terstredisproject1.domain.exception.TokenLimitExceeded;
 import com.terstredisproject1.domain.model.agent.TokenUsage;
 import com.terstredisproject1.usecase.agent.GetMessageUseCase;
 import com.terstredisproject1.usecase.agent.GetTokenUsageUseCase;
@@ -33,8 +33,8 @@ public class AgentController {
     }
 
 
-    @ExceptionHandler(TokenLimitReachException.class)
-    public ResponseEntity<String> handleTokenLimitReachException(TokenLimitReachException ex) {
+    @ExceptionHandler(TokenLimitExceeded.class)
+    public ResponseEntity<String> handleTokenLimitReachException(TokenLimitExceeded ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 }

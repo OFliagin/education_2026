@@ -1,6 +1,6 @@
 package com.terstredisproject1.infrastructure.adapter.agent.port;
 
-import com.terstredisproject1.domain.exception.TokenLimitReachException;
+import com.terstredisproject1.domain.exception.TokenLimitExceeded;
 import com.terstredisproject1.domain.model.agent.AgentResult;
 import com.terstredisproject1.infrastructure.adapter.agent.TokenUsageLimiter;
 import com.terstredisproject1.infrastructure.db.redis.RedisTokenRepository;
@@ -31,8 +31,8 @@ public class GetMessagePortImpl implements GetMessagePort {
     private void updateTokenUsage(long userId, String message) {
         log.info("Updating token usage for user: {} with message length: {}", userId, message.length());
         long tokenUsage = calculateTokenUsage(message);
-        if (tokenUsageLimiter.isLimitRich(userId, tokenUsage)) {
-            throw new TokenLimitReachException("Token usage limit exceeded");
+        if (tokenUsageLimiter.isTokenUsageExceeded(userId, tokenUsage)) {
+            throw new TokenLimitExceeded("Token usage limit exceeded");
         }
         redisTokenRepository.incrementTokenUsage(tokenUsage, userId);
     }
