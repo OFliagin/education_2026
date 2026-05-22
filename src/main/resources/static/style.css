@@ -353,6 +353,17 @@ button { cursor: pointer; font-family: inherit; }
   border-radius: 8px;
 }
 
+.chat-input-row input:disabled,
+.chat-input-row .btn-send:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.chat-input-row input:disabled {
+  background: var(--surface);
+  color: var(--text-muted, #94a3b8);
+}
+
 /* ── Page content (billing) ── */
 .page-content {
   flex: 1;

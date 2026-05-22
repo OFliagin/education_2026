@@ -144,6 +144,14 @@ function initChat() {
   });
 }
 
+function setChatBlocked(blocked) {
+  const input  = document.getElementById('chat-input');
+  const button = document.querySelector('.btn-send');
+  input.disabled  = blocked;
+  button.disabled = blocked;
+  input.placeholder = blocked ? 'Token limit reached — upgrade your plan' : 'Type a message…';
+}
+
 async function sendMessage() {
   const input = document.getElementById('chat-input');
   const text  = input.value.trim();
@@ -159,8 +167,11 @@ async function sendMessage() {
     const res = await api('POST', '/api/agent/message', { userId, message: text });
     typing.querySelector('.bubble').textContent = res.response;
   } catch (e) {
-    typing.querySelector('.bubble').textContent = `Error: ${e.message}`;
-    typing.querySelector('.bubble').classList.add('bubble--error');
+    const bubble = typing.querySelector('.bubble');
+    const isLimitError = e.message?.toLowerCase().includes('limit exceeded');
+    bubble.textContent = isLimitError ? 'Token limit reached. Upgrade your plan to continue.' : `Error: ${e.message}`;
+    bubble.classList.add('bubble--error');
+    if (isLimitError) setChatBlocked(true);
   } finally {
     loadContextWindow();
   }
@@ -255,6 +266,8 @@ async function loadContextWindow() {
 
       const badge = document.getElementById('ctx-token-limit-badge');
       badge.classList.toggle('hidden', !exceeded);
+
+      setChatBlocked(exceeded);
     }
   } catch {
     document.getElementById('context-text').textContent = 'Stats unavailable.';
