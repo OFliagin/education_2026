@@ -509,6 +509,20 @@ button { cursor: pointer; font-family: inherit; }
   font-style: italic;
 }
 
+.token-limit-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--red);
+  padding: 1px 6px;
+  border-radius: 10px;
+  letter-spacing: 0.02em;
+}
+
+.token-limit-badge.hidden {
+  display: none;
+}
+
 /* ── Leaderboard ── */
 .lb-header {
   padding: 14px 16px;

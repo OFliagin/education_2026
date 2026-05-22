@@ -106,7 +106,21 @@ async function register() {
   const email    = document.getElementById('reg-email').value.trim();
   const password = document.getElementById('reg-password').value;
   try {
-    const id = await api('POST', '/users', { name, email, password });
+    const res = await fetch('/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      let msg = text;
+      try { msg = JSON.parse(text)?.message ?? text; } catch {}
+      throw new Error(msg || `HTTP ${res.status}`);
+    }
+    const id = JSON.parse(text);
+    if (res.status === 201) {
+      await api('POST', `/payment-profile/users/${id}`);
+    }
     await api('POST', '/auth/login', { email, password });
     sessionStorage.setItem('userId', id);
     location.href = '/chat.html';
@@ -226,15 +240,21 @@ async function loadContextWindow() {
       `You're ranked #${r} among all chat users.`;
 
     if (tokens) {
-      const used  = tokens.usedTokens  ?? 0;
-      const total = tokens.totalTokens ?? 0;
-      const pct   = total > 0 ? Math.min(100, Math.round(used / total * 100)) : 0;
+      const used      = tokens.usedTokens      ?? 0;
+      const total     = tokens.totalTokens     ?? 0;
+      const pct       = tokens.usagePercent    ?? 0;
+      const remaining = tokens.remainingTokens ?? 0;
+      const exceeded  = tokens.limitExceeded   ?? false;
 
-      document.getElementById('ctx-token-used').textContent  = used;
-      document.getElementById('ctx-token-total').textContent = `${total} total`;
-      document.getElementById('ctx-token-bar').style.width   = `${pct}%`;
-      document.getElementById('ctx-token-bar').className     =
-        'token-bar-fill' + (pct >= 90 ? ' token-bar-fill--danger' : pct >= 70 ? ' token-bar-fill--warn' : '');
+      document.getElementById('ctx-token-used').textContent      = used;
+      document.getElementById('ctx-token-total').textContent     = `${total} total`;
+      document.getElementById('ctx-token-remaining').textContent = remaining;
+      document.getElementById('ctx-token-bar').style.width       = `${Math.min(100, pct)}%`;
+      document.getElementById('ctx-token-bar').className         =
+        'token-bar-fill' + (exceeded || pct >= 90 ? ' token-bar-fill--danger' : pct >= 70 ? ' token-bar-fill--warn' : '');
+
+      const badge = document.getElementById('ctx-token-limit-badge');
+      badge.classList.toggle('hidden', !exceeded);
     }
   } catch {
     document.getElementById('context-text').textContent = 'Stats unavailable.';

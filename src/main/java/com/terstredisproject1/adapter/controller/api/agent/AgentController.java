@@ -30,6 +30,6 @@ public class AgentController {
     @GetMapping("/api/agent/user/{userId}/token-usage")
     public TokenUsageResponse getTokenUsage(@PathVariable long userId) {
         final TokenUsage tokenUsage = getTokenUsageUseCase.execute(userId);
-        return new TokenUsageResponse(tokenUsage.totalTokens(), tokenUsage.usedTokens());
+        return new TokenUsageResponse(tokenUsage.totalTokens(), tokenUsage.usedTokens(), tokenUsage.usagePercent(), tokenUsage.remainingTokens(), tokenUsage.limitExceeded());
     }
 }

@@ -10,6 +10,7 @@ import com.terstredisproject1.usecase.user.UpdateUserUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,6 +24,7 @@ public class ManageUserController {
     private final UpdateUserUseCase updateUserUseCase;
 
     @PostMapping("/users")
+    @ResponseStatus(HttpStatus.CREATED)
     public long createUser(@Valid @RequestBody CreateUserRequest createUserRequest) {
         log.debug("Creating user with request: {}", createUserRequest);
         return createUserUseCase.execute(createUserRequest);

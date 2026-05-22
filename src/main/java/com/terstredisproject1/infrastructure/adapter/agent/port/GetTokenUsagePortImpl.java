@@ -16,6 +16,7 @@ public class GetTokenUsagePortImpl implements GetTokenUsagePort {
     private final RedisTokenRepository redisTokenRepository;
     private final RedisPaymentProfileRepository redisPaymentProfileRepository;
 
+
     @Override
     public TokenUsage get(long userId) {
         log.info("Getting token usage for user: {}", userId);
@@ -25,8 +26,11 @@ public class GetTokenUsagePortImpl implements GetTokenUsagePort {
             log.error("Payment profile not found for user: {}", userId);
             throw new IllegalStateException("Payment profile not found for user " + userId);
         }
-        final long availableTokens = paymentProfile.getPlan().getAvailableTokens();
-        log.info("Token usage retrieved for user: {} - Available tokens: {}, Used tokens: {}", userId, availableTokens, tokenUsage);
-        return new TokenUsage(availableTokens, tokenUsage);
+        final long totalTokens = paymentProfile.getPlan().getAvailableTokens();
+        final long remainingTokens = totalTokens - tokenUsage;
+        final int usagePercent = (int) ((tokenUsage * 100.0) / totalTokens);
+        final boolean limitExceeded = tokenUsage >= totalTokens;
+        log.info("Token usage retrieved for user: {} - Available tokens: {}, Used tokens: {}, Usage percent: {}, Limit exceeded: {}", userId, totalTokens, tokenUsage, usagePercent, limitExceeded);
+        return new TokenUsage(totalTokens, tokenUsage, usagePercent, remainingTokens, limitExceeded);
     }
 }
