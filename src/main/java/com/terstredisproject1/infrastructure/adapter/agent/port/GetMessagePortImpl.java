@@ -1,14 +1,17 @@
 package com.terstredisproject1.infrastructure.adapter.agent.port;
 
 import com.terstredisproject1.domain.exception.TokenLimitExceeded;
+import com.terstredisproject1.domain.exception.TokenLockException;
 import com.terstredisproject1.domain.model.agent.AgentResult;
 import com.terstredisproject1.infrastructure.adapter.agent.TokenUsageLimiter;
 import com.terstredisproject1.infrastructure.client.AiAgentClient;
 import com.terstredisproject1.infrastructure.db.redis.RedisTokenRepository;
+import com.terstredisproject1.infrastructure.locker.Locker;
 import com.terstredisproject1.usecase.agent.port.GetMessagePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,6 +21,7 @@ public class GetMessagePortImpl implements GetMessagePort {
     private final RedisTokenRepository redisTokenRepository;
     private final TokenUsageLimiter tokenUsageLimiter;
     private final AiAgentClient aiAgentClient;
+    private final Locker locker;
 
     @Override
     public AgentResult execute(long userId, String message) {
@@ -25,13 +29,31 @@ public class GetMessagePortImpl implements GetMessagePort {
             return new AgentResult("Please ask a question");
         }
 
+        if (locker.lock(userId + "")) {
+            try {
+                return retrieveAgentReply(userId, message);
+            } finally {
+                locker.unlock(userId + "");
+            }
+        }
+        throw new TokenLockException("Failed to acquire agent lock");
+    }
+
+    private @NonNull AgentResult retrieveAgentReply(long userId, String message) {
         long tokenUsage = calculateTokenUsage(message);
         validateTokenLimit(userId, tokenUsage);
-
         String agentResponse = aiAgentClient.ask(message);
         redisTokenRepository.incrementTokenUsage(tokenUsage, userId);
-
+        imitationLongProcess();
         return new AgentResult(agentResponse);
+    }
+
+    private static void imitationLongProcess() {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private void validateTokenLimit(long userId, long tokenUsage) {
