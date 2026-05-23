@@ -26,6 +26,13 @@ public class RedisLockerRepository {
 
     private final StringRedisTemplate stringRedisTemplate;
     private static final String REDIS_KEY_PREFIX = "locker:";
+    private static final DefaultRedisScript<Long> UNLOCK_REDIS_SCRIPT;
+
+    static {
+        UNLOCK_REDIS_SCRIPT = new DefaultRedisScript<>();
+        UNLOCK_REDIS_SCRIPT.setScriptText(UNLOCK_SCRIPT);
+        UNLOCK_REDIS_SCRIPT.setResultType(Long.class);
+    }
 
     @Value("${redis.lock.timeout.seconds:30}")
     private long lockTimeoutSeconds;
@@ -36,11 +43,7 @@ public class RedisLockerRepository {
 
     public void unlock(String lockerId, UUID lockUuid) {
         final String key = getKey(lockerId);
-        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
-        script.setScriptText(UNLOCK_SCRIPT);
-
-        script.setResultType(Long.class);
-        Long result = stringRedisTemplate.execute(script, List.of(key), lockUuid.toString());
+        Long result = stringRedisTemplate.execute(UNLOCK_REDIS_SCRIPT, List.of(key), lockUuid.toString());
         log.info("Unlock result for key {} and token {} : {}", key, lockUuid, result);
     }
 
