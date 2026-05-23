@@ -3,6 +3,7 @@ package com.terstredisproject1.infrastructure.adapter.agent.port;
 import com.terstredisproject1.domain.exception.TokenLimitExceeded;
 import com.terstredisproject1.domain.model.agent.AgentResult;
 import com.terstredisproject1.infrastructure.adapter.agent.TokenUsageLimiter;
+import com.terstredisproject1.infrastructure.client.AiAgentClient;
 import com.terstredisproject1.infrastructure.db.redis.RedisTokenRepository;
 import com.terstredisproject1.usecase.agent.port.GetMessagePort;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
 public class GetMessagePortImpl implements GetMessagePort {
     private final RedisTokenRepository redisTokenRepository;
     private final TokenUsageLimiter tokenUsageLimiter;
+    private final AiAgentClient aiAgentClient;
 
     @Override
     public AgentResult execute(long userId, String message) {
@@ -23,18 +25,20 @@ public class GetMessagePortImpl implements GetMessagePort {
             return new AgentResult("Please ask a question");
         }
 
-        updateTokenUsage(userId, message);
+        long tokenUsage = calculateTokenUsage(message);
+        validateTokenLimit(userId, tokenUsage);
 
-        return new AgentResult("Great question:" + message);
+        String agentResponse = aiAgentClient.ask(message);
+        redisTokenRepository.incrementTokenUsage(tokenUsage, userId);
+
+        return new AgentResult(agentResponse);
     }
 
-    private void updateTokenUsage(long userId, String message) {
-        log.info("Updating token usage for user: {} with message length: {}", userId, message.length());
-        long tokenUsage = calculateTokenUsage(message);
+    private void validateTokenLimit(long userId, long tokenUsage) {
+        log.info("Checking token usage for user: {} with token usage: {}", userId, tokenUsage);
         if (tokenUsageLimiter.isTokenLimitExceeded(userId, tokenUsage)) {
             throw new TokenLimitExceeded("Token usage limit exceeded");
         }
-        redisTokenRepository.incrementTokenUsage(tokenUsage, userId);
     }
 
     private long calculateTokenUsage(String message) {
