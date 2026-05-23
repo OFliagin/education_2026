@@ -12,12 +12,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import java.util.UUID;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class GetMessagePortImpl implements GetMessagePort {
+    @Value("${ai:is.use.imitation.process:true}")
+    private boolean isUseImitationProcess;
+
     private final RedisTokenRepository redisTokenRepository;
     private final TokenUsageLimiter tokenUsageLimiter;
     private final AiAgentClient aiAgentClient;
@@ -29,11 +35,12 @@ public class GetMessagePortImpl implements GetMessagePort {
             return new AgentResult("Please ask a question");
         }
 
-        if (locker.lock(userId + "")) {
+        UUID lockUuid = UUID.randomUUID();
+        if (locker.lock(String.valueOf(userId), lockUuid)) {
             try {
                 return retrieveAgentReply(userId, message);
             } finally {
-                locker.unlock(userId + "");
+                locker.unlock(String.valueOf(userId), lockUuid);
             }
         }
         throw new TokenLockException("Failed to acquire agent lock");
@@ -48,11 +55,13 @@ public class GetMessagePortImpl implements GetMessagePort {
         return new AgentResult(agentResponse);
     }
 
-    private static void imitationLongProcess() {
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+    private void imitationLongProcess() {
+        if (isUseImitationProcess) {
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
