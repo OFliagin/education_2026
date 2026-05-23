@@ -19,14 +19,14 @@ public class RedisLockerRepository {
     private long lockTimeoutSeconds;
 
     public boolean lock(String lockerId, UUID lockUuid) {
-        return Boolean.TRUE.equals(stringRedisTemplate.opsForValue().setIfAbsent(getKey(lockerId, lockUuid), "locked", Duration.ofSeconds(lockTimeoutSeconds)));
+        return Boolean.TRUE.equals(stringRedisTemplate.opsForValue().setIfAbsent(getKey(lockerId), lockUuid.toString(), Duration.ofSeconds(lockTimeoutSeconds)));
     }
 
-    public void unlock(String lockerId, UUID lockUuid) {
-        stringRedisTemplate.delete(getKey(lockerId, lockUuid));
+    public void unlock(String lockerId) {
+        stringRedisTemplate.delete(getKey(lockerId));
     }
 
-    private @NonNull String getKey(String lockerId, UUID lockUuid) {
-        return REDIS_KEY_PREFIX + lockerId+":"+lockUuid;
+    private @NonNull String getKey(String lockerId) {
+        return REDIS_KEY_PREFIX + lockerId;
     }
 }
