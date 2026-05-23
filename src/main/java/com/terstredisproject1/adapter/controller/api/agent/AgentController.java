@@ -34,7 +34,7 @@ public class AgentController {
 
 
     @ExceptionHandler(TokenLimitExceeded.class)
-    public ResponseEntity<String> handleTokenLimitReachException(TokenLimitExceeded ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    public ResponseEntity<String> handleTokenLimitExceeded(TokenLimitExceeded ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(ex.getMessage());
     }
 }

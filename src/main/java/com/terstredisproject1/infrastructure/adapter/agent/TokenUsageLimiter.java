@@ -13,9 +13,15 @@ public class TokenUsageLimiter {
     private final RedisPaymentProfileRepository redisPaymentProfileRepository;
 
 
-    public boolean isTokenUsageExceeded(long userId, long tokenUsage) {
+    public boolean isTokenLimitExceeded(long userId, long tokenUsage) {
         val tokenUsed = redisTokenRepository.getTokenUsage(userId);
-        val availableTokens = redisPaymentProfileRepository.findByUserId(userId).getPlan().getAvailableTokens();
+
+        val paymentProfile = redisPaymentProfileRepository.findByUserId(userId);
+        if (paymentProfile == null) {
+            throw new IllegalStateException("Payment profile not found for user " + userId);
+        }
+
+        val availableTokens = paymentProfile.getPlan().getAvailableTokens();
         return tokenUsed >= availableTokens || tokenUsage + tokenUsed > availableTokens;
     }
 }

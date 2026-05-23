@@ -31,7 +31,7 @@ public class GetMessagePortImpl implements GetMessagePort {
     private void updateTokenUsage(long userId, String message) {
         log.info("Updating token usage for user: {} with message length: {}", userId, message.length());
         long tokenUsage = calculateTokenUsage(message);
-        if (tokenUsageLimiter.isTokenUsageExceeded(userId, tokenUsage)) {
+        if (tokenUsageLimiter.isTokenLimitExceeded(userId, tokenUsage)) {
             throw new TokenLimitExceeded("Token usage limit exceeded");
         }
         redisTokenRepository.incrementTokenUsage(tokenUsage, userId);

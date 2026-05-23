@@ -77,6 +77,36 @@ Two distinct Redis interaction patterns coexist:
 | `user.session.ttl.min` | 3 | TTL for user session keys |
 | `spring.data.redis.cluster.nodes` | `localhost:7010–7015` | Redis Cluster node list |
 
+## Agent / Token Usage Flow
+
+### Endpoints
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/agent/message` | Send a message; consumes tokens |
+| `GET` | `/api/agent/user/{userId}/token-usage` | Read current token usage |
+
+### Token cost formula
+`ceil(message.length / 50) * 10` tokens per request (in `GetMessagePortImpl`).
+
+### Token storage
+`RedisTokenRepository` stores per-user daily usage under key `ai:token-usage:{userId}:{yyyyMMdd}` (manual `StringRedisTemplate`, not Spring Cache). TTL is set to end of UTC day on first write.
+
+### Payment plans
+`PaymentPlan` enum defines per-plan token budgets:
+
+| Plan | Available tokens |
+|---|---|
+| `BASIC` | 100 |
+| `PRO` | 2 000 |
+| `PREMIUM` | 5 000 |
+
+### Limit enforcement
+`TokenUsageLimiter.isTokenLimitExceeded(userId, tokenUsage)` blocks a request when either:
+- tokens already used `>=` plan limit (hard cap), or
+- tokens used `+` cost of this request `>` plan limit (pre-flight check).
+
+A missing payment profile throws `IllegalStateException` (fail-fast; the profile must exist before messaging). Exceeding the limit throws `TokenLimitExceeded`, handled by `AgentController.handleTokenLimitExceeded` with **HTTP 429**.
+
 ## Testing Approach
 
 Cache behavior tests (`UserCachePortsTest`) use `@SpringJUnitConfig` with an in-memory `ConcurrentMapCacheManager` instead of a real Redis connection — this tests the `@Cacheable`/`@CachePut` annotations without infrastructure. The port implementation beans are wired directly in a `@Configuration` inner class using mocked JPA repositories.
