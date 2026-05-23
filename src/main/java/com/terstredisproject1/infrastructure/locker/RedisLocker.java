@@ -17,7 +17,7 @@ public class RedisLocker implements Locker {
     }
 
     @Override
-    public void unlock(String lockerId) {
-        redisLockerRepository.unlock(lockerId);
+    public void unlock(String lockerId, UUID lockUuid) {
+        redisLockerRepository.unlock(lockerId, lockUuid);
     }
 }

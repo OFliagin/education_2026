@@ -1,6 +1,7 @@
 package com.terstredisproject1.infrastructure.db.redis;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -22,8 +23,12 @@ public class RedisLockerRepository {
         return Boolean.TRUE.equals(stringRedisTemplate.opsForValue().setIfAbsent(getKey(lockerId), lockUuid.toString(), Duration.ofSeconds(lockTimeoutSeconds)));
     }
 
-    public void unlock(String lockerId) {
-        stringRedisTemplate.delete(getKey(lockerId));
+    public void unlock(String lockerId, UUID lockUuid) {
+        final String key = getKey(lockerId);
+        final String value = stringRedisTemplate.opsForValue().get(key);
+        if (StringUtils.isNotBlank(value) && value.equals(lockUuid.toString())) {
+            stringRedisTemplate.delete(key);
+        }
     }
 
     private @NonNull String getKey(String lockerId) {

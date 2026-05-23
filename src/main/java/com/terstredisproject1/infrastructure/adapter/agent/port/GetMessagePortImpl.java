@@ -35,11 +35,12 @@ public class GetMessagePortImpl implements GetMessagePort {
             return new AgentResult("Please ask a question");
         }
 
-        if (locker.lock(String.valueOf(userId), UUID.randomUUID())) {
+        UUID lockUuid = UUID.randomUUID();
+        if (locker.lock(String.valueOf(userId), lockUuid)) {
             try {
                 return retrieveAgentReply(userId, message);
             } finally {
-                locker.unlock(String.valueOf(userId));
+                locker.unlock(String.valueOf(userId), lockUuid);
             }
         }
         throw new TokenLockException("Failed to acquire agent lock");
