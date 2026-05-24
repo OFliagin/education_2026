@@ -1,5 +1,6 @@
 package com.terstredisproject1.infrastructure.adapter.agent;
 
+import com.terstredisproject1.domain.exception.PaymentProfileNotActiveException;
 import com.terstredisproject1.domain.model.PaymentStatus;
 import com.terstredisproject1.domain.model.UserPaymentProfile;
 import com.terstredisproject1.infrastructure.db.redis.RedisPaymentProfileRepository;
@@ -23,7 +24,7 @@ public class TokenUsageLimiter {
         }
 
         if (paymentProfile.getPaymentStatus() != PaymentStatus.ACTIVE) {
-            throw new IllegalStateException("Payment profile is not active for user " + userId);
+            throw new PaymentProfileNotActiveException("Payment profile is not active for user " + userId);
         }
 
         long availableTokens = paymentProfile.getPlan().getAvailableTokens();
