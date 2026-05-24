@@ -1,13 +1,17 @@
 package com.terstredisproject1.adapter.controller.api.agent;
 
+import com.terstredisproject1.adapter.controller.api.agent.request.AgentDilayMessageRequest;
 import com.terstredisproject1.adapter.controller.api.agent.request.AgentRequest;
 import com.terstredisproject1.adapter.controller.api.agent.response.AgentResponse;
 import com.terstredisproject1.adapter.controller.api.agent.response.TokenUsageResponse;
 import com.terstredisproject1.domain.exception.TokenLimitExceeded;
 import com.terstredisproject1.domain.exception.TokenLockException;
+import com.terstredisproject1.domain.model.agent.AgentDilayMessage;
+import com.terstredisproject1.domain.model.agent.PeriodType;
 import com.terstredisproject1.domain.model.agent.TokenUsage;
 import com.terstredisproject1.usecase.agent.GetMessageUseCase;
 import com.terstredisproject1.usecase.agent.GetTokenUsageUseCase;
+import com.terstredisproject1.usecase.agent.SetDilayMessageUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,12 +23,21 @@ import org.springframework.web.bind.annotation.*;
 public class AgentController {
     private final GetMessageUseCase getMessageUseCase;
     private final GetTokenUsageUseCase getTokenUsageUseCase;
+    private final SetDilayMessageUseCase setDilayMessageUseCase;
 
     @PostMapping("/api/agent/message")
     public AgentResponse getAgentResponse(@Valid @RequestBody AgentRequest request) {
         final var result = getMessageUseCase.execute(request.userId(), request.message());
         return new AgentResponse(request.userId(), request.message(), result.message());
+    }
 
+    @PostMapping("/api/agent/message/delayed")
+    public ResponseEntity<String> delayMessage(@RequestBody AgentDilayMessageRequest request) {
+        setDilayMessageUseCase.setMessage(request.userId(),
+                new AgentDilayMessage(request.message(),
+                        PeriodType.valueOf(request.periodType()),
+                        request.periodValue()));
+        return ResponseEntity.ok("Message delayed successfully");
     }
 
     @GetMapping("/api/agent/user/{userId}/token-usage")

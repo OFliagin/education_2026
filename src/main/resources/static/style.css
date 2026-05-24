@@ -649,4 +649,65 @@ button { cursor: pointer; font-family: inherit; }
 }
 .toast--ok   { background: #166534; color: #dcfce7; }
 .toast--warn { background: #92400e; color: #fef3c7; }
+
+/* ── Delay button ── */
+.btn-delay {
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s;
+}
+.btn-delay:hover { background: var(--border); }
+
+/* ── Modal ── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.modal-title  { font-size: 15px; font-weight: 700; }
+.modal-body   { display: flex; flex-direction: column; gap: 8px; }
+.modal-label  { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; }
+.modal-select,
+.modal-input  {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; }
+.btn-cancel {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
 .toast--err  { background: #991b1b; color: #fee2e2; }

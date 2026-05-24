@@ -79,7 +79,29 @@
     <form class="chat-input-row" onsubmit="sendMessage(); return false;">
       <input id="chat-input" placeholder="Type a message…" autocomplete="off">
       <button type="submit" class="btn-send">Send</button>
+      <button type="button" class="btn-delay" onclick="openDelayModal()">⏱ Delay</button>
     </form>
+
+    <!-- Delay modal -->
+    <div id="delay-modal" class="modal-backdrop hidden" onclick="closeDelayModal(event)">
+      <div class="modal">
+        <div class="modal-title">Schedule message</div>
+        <div class="modal-body">
+          <label class="modal-label">Period type</label>
+          <select id="delay-period-type" class="modal-select">
+            <option value="MINUTES">Minutes</option>
+            <option value="HOURS">Hours</option>
+            <option value="DAYS">Days</option>
+          </select>
+          <label class="modal-label">Value</label>
+          <input id="delay-period-value" type="number" min="1" value="5" class="modal-input">
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" onclick="closeDelayModal()">Cancel</button>
+          <button class="btn-send" onclick="sendDelayedMessage()">Schedule</button>
+        </div>
+      </div>
+    </div>
   </div>
 
 </div>

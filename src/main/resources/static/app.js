@@ -335,6 +335,36 @@ async function simulatePayment(result) {
   }
 }
 
+// ── Delayed message (chat.html) ────────────────────────────────────────────
+function openDelayModal() {
+  const text = document.getElementById('chat-input').value.trim();
+  if (!text) { toast('Type a message first', 'warn'); return; }
+  document.getElementById('delay-modal').classList.remove('hidden');
+}
+
+function closeDelayModal(e) {
+  if (e && e.target !== document.getElementById('delay-modal')) return;
+  document.getElementById('delay-modal').classList.add('hidden');
+}
+
+async function sendDelayedMessage() {
+  const message     = document.getElementById('chat-input').value.trim();
+  const periodType  = document.getElementById('delay-period-type').value;
+  const periodValue = parseInt(document.getElementById('delay-period-value').value, 10);
+
+  if (!message)          { toast('Type a message first', 'warn'); return; }
+  if (!periodValue || periodValue < 1) { toast('Enter a valid period value', 'warn'); return; }
+
+  try {
+    await api('PATCH', '/api/agent/message/delayed', { userId, message, periodType, periodValue });
+    document.getElementById('chat-input').value = '';
+    document.getElementById('delay-modal').classList.add('hidden');
+    toast('Message scheduled');
+  } catch (e) {
+    toast(e.message, 'err');
+  }
+}
+
 // ── Utilities ──────────────────────────────────────────────────────────────
 function fmtDate(epochMs) {
   return new Date(epochMs).toLocaleDateString('en-GB', {
