@@ -1,17 +1,17 @@
 package com.terstredisproject1.adapter.controller.api.agent;
 
-import com.terstredisproject1.adapter.controller.api.agent.request.AgentDilayMessageRequest;
+import com.terstredisproject1.adapter.controller.api.agent.request.AgentDelayedMessageRequest;
 import com.terstredisproject1.adapter.controller.api.agent.request.AgentRequest;
 import com.terstredisproject1.adapter.controller.api.agent.response.AgentResponse;
 import com.terstredisproject1.adapter.controller.api.agent.response.TokenUsageResponse;
 import com.terstredisproject1.domain.exception.TokenLimitExceeded;
 import com.terstredisproject1.domain.exception.TokenLockException;
-import com.terstredisproject1.domain.model.agent.AgentDilayMessage;
+import com.terstredisproject1.domain.model.agent.AgentDelayedMessage;
 import com.terstredisproject1.domain.model.agent.PeriodType;
 import com.terstredisproject1.domain.model.agent.TokenUsage;
 import com.terstredisproject1.usecase.agent.GetMessageUseCase;
 import com.terstredisproject1.usecase.agent.GetTokenUsageUseCase;
-import com.terstredisproject1.usecase.agent.SetDilayMessageUseCase;
+import com.terstredisproject1.usecase.agent.SetDelayedMessageUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class AgentController {
     private final GetMessageUseCase getMessageUseCase;
     private final GetTokenUsageUseCase getTokenUsageUseCase;
-    private final SetDilayMessageUseCase setDilayMessageUseCase;
+    private final SetDelayedMessageUseCase setDelayedMessageUseCase;
 
     @PostMapping("/api/agent/message")
     public AgentResponse getAgentResponse(@Valid @RequestBody AgentRequest request) {
@@ -32,9 +32,9 @@ public class AgentController {
     }
 
     @PostMapping("/api/agent/message/delayed")
-    public ResponseEntity<String> delayMessage(@RequestBody AgentDilayMessageRequest request) {
-        setDilayMessageUseCase.setMessage(request.userId(),
-                new AgentDilayMessage(request.message(),
+    public ResponseEntity<String> delayMessage(@RequestBody AgentDelayedMessageRequest request) {
+        setDelayedMessageUseCase.scheduleMessage(request.userId(),
+                new AgentDelayedMessage(request.message(),
                         PeriodType.valueOf(request.periodType()),
                         request.periodValue()));
         return ResponseEntity.ok("Message delayed successfully");
