@@ -21,7 +21,7 @@ import java.util.UUID;
 @Slf4j
 @RequiredArgsConstructor
 public class GetMessagePortImpl implements GetMessagePort {
-    @Value("${ai:is.use.imitation.process:true}")
+    @Value("${ai.is.use.imitation.process:true}")
     private boolean isUseImitationProcess;
 
     private final RedisTokenRepository redisTokenRepository;
