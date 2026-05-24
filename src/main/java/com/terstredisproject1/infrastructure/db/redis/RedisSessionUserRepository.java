@@ -36,7 +36,7 @@ public class RedisSessionUserRepository {
     }
 
     public boolean refreshSession(long userId) {
-         return Boolean.TRUE.equals(stringRedisTemplate.expire(getKey(userId), Duration.ofMinutes(sessionTTL)));
+        return Boolean.TRUE.equals(stringRedisTemplate.expire(getKey(userId), Duration.ofMinutes(sessionTTL)));
     }
 
     private static @NonNull String getKey(long userId) {

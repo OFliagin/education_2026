@@ -131,14 +131,14 @@ public class RedisPaymentProfileRepository {
     private Map<String, String> mapToPaymentProfile(UserPaymentProfile profile) {
         validateRequiredFields(profile);
         return Map.of(
-            "userId", String.valueOf(profile.getUserId()),
-            "plan", profile.getPlan().name(),
-            "currency", profile.getCurrency(),
-            PAYMENT_STATUS_KEY, profile.getPaymentStatus().name(),
-            "balanceInCents", String.valueOf(profile.getBalanceInCents()),
-            "lastPaymentAtEpochMillis", String.valueOf(profile.getLastPaymentAtEpochMillis()),
-            "nextBillingAtEpochMillis", String.valueOf(profile.getNextBillingAtEpochMillis()),
-            FAILED_PAYMENTS_COUNT_KEY, String.valueOf(profile.getFailedPaymentsCount())
+                "userId", String.valueOf(profile.getUserId()),
+                "plan", profile.getPlan().name(),
+                "currency", profile.getCurrency(),
+                PAYMENT_STATUS_KEY, profile.getPaymentStatus().name(),
+                "balanceInCents", String.valueOf(profile.getBalanceInCents()),
+                "lastPaymentAtEpochMillis", String.valueOf(profile.getLastPaymentAtEpochMillis()),
+                "nextBillingAtEpochMillis", String.valueOf(profile.getNextBillingAtEpochMillis()),
+                FAILED_PAYMENTS_COUNT_KEY, String.valueOf(profile.getFailedPaymentsCount())
         );
     }
 

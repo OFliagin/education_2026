@@ -18,6 +18,7 @@ public class CreatePaymentProfilePortImpl implements CreatePaymentProfilePort {
         if (redisPaymentProfileRepository.exists(userId)) {
             throw new IllegalArgumentException("Payment profile already exists for user: " + userId);
         }
+
         UserPaymentProfile userPaymentProfile = UserPaymentProfile.createDefault(userId);
         redisPaymentProfileRepository.save(userPaymentProfile);
         log.info("Payment profile created for user: {}", userId);

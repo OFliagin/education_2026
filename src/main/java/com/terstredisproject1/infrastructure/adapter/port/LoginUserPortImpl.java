@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class LoginUserPortImpl implements LoginUserPort {
     private final RedisSessionUserRepository redisSessionUserRepository;
+
     @Override
     public void execute(User user) {
         redisSessionUserRepository.save(user);
