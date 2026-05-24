@@ -2,6 +2,7 @@ package com.terstredisproject1.infrastructure.adapter.scheduler.agent;
 
 import com.terstredisproject1.domain.model.agent.AgentResult;
 import com.terstredisproject1.domain.model.agent.DilayMessage;
+import com.terstredisproject1.usecase.agent.DeleteDilayMessageUseCase;
 import com.terstredisproject1.usecase.agent.GetDilayMessageUseCase;
 import com.terstredisproject1.usecase.agent.GetMessageUseCase;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import java.util.List;
 public class DilayMessageProcessor {
     private final GetDilayMessageUseCase getDilayMessageUseCase;
     private final GetMessageUseCase getMessageUseCase;
+    private final DeleteDilayMessageUseCase deleteDilayMessageUseCase;
 
     @Scheduled(fixedDelay = 1000)
     public void process() {
@@ -25,6 +27,7 @@ public class DilayMessageProcessor {
         for (DilayMessage dm : dilayMessages) {
             final AgentResult execute = getMessageUseCase.execute(dm.userId(), dm.message());
             log.info("Message processed: {}", execute.message());
+            deleteDilayMessageUseCase.delete(dm);
         }
     }
 }

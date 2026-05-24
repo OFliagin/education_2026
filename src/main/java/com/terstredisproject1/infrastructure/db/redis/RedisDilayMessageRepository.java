@@ -42,6 +42,10 @@ public class RedisDilayMessageRepository {
                 .toList();
     }
 
+    public void removeMessage(DilayMessage message) {
+        stringRedisTemplate.opsForZSet().remove(DELAYED_MESSAGE_QUEUE_KEY, toJson(message));
+    }
+
     @SneakyThrows
     private String toJson(DilayMessage dilayMessage) {
         return objectMapper.writeValueAsString(dilayMessage);
