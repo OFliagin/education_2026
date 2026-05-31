@@ -356,7 +356,7 @@ async function sendDelayedMessage() {
   if (!periodValue || periodValue < 1) { toast('Enter a valid period value', 'warn'); return; }
 
   try {
-    await api('PATCH', '/api/agent/message/delayed', { userId, message, periodType, periodValue });
+    await api('POST', '/api/agent/message/delayed', { userId, message, periodType, periodValue });
     document.getElementById('chat-input').value = '';
     document.getElementById('delay-modal').classList.add('hidden');
     toast('Message scheduled');
