@@ -1,15 +1,18 @@
 package com.terstredisproject1.infrastructure.adapter.scheduler.agent;
 
+import com.terstredisproject1.domain.model.AgentMessageEvent;
 import com.terstredisproject1.domain.model.agent.AgentResult;
 import com.terstredisproject1.domain.model.agent.DelayedMessage;
 import com.terstredisproject1.usecase.agent.DeleteDelayedMessageUseCase;
 import com.terstredisproject1.usecase.agent.GetDelayedMessageUseCase;
 import com.terstredisproject1.usecase.agent.GetMessageUseCase;
+import com.terstredisproject1.usecase.agent.port.PublishAgentEventPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
@@ -20,6 +23,7 @@ public class DelayedMessageProcessor {
     private final GetDelayedMessageUseCase getDelayedMessageUseCase;
     private final GetMessageUseCase getMessageUseCase;
     private final DeleteDelayedMessageUseCase deleteDelayedMessageUseCase;
+    private final PublishAgentEventPort publishAgentEventPort;
 
     @Scheduled(fixedDelay = 1000)
     public void process() {
@@ -28,6 +32,14 @@ public class DelayedMessageProcessor {
         for (DelayedMessage dm : delayedMessages) {
             final AgentResult result = getMessageUseCase.execute(dm.userId(), dm.message());
             log.info("Message processed: {}", result.message());
+            final AgentMessageEvent agentMessageEvent = AgentMessageEvent.builder()
+                    .originalMessage(dm.message())
+                    .userId(dm.userId())
+                    .agentResponse(result.message())
+                    .completedAt(LocalDateTime.now())
+                    .build();
+
+            publishAgentEventPort.publishTaskCompleted(agentMessageEvent);
             deleteDelayedMessageUseCase.delete(dm);
         }
     }
