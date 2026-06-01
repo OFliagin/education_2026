@@ -26,9 +26,9 @@ public class AgentEventConsumer {
     @Value("${ai.task.events.stream.key:ai:task:stream:events}")
     private String streamKey;
     @Value("${ai.task.events.stream.consumer.name:app-instance}-${random.uuid}")
-    private String consumerName_1;
+    private String consumerName1;
     @Value("${ai.task.events.stream.consumer.name:app-instance}-${random.uuid}")
-    private String consumerName_2;
+    private String consumerName2;
 
 
     @PostConstruct
@@ -52,7 +52,7 @@ public class AgentEventConsumer {
     @Scheduled(fixedRate = 1000)
     public void consume1() {
         try {
-            final List<MapRecord<String, Object, Object>> messages = getRecords(consumerName_1);
+            final List<MapRecord<String, Object, Object>> messages = getRecords(consumerName1);
             if (!CollectionUtils.isEmpty(messages)) {
                 processMessage(messages);
             }
@@ -64,7 +64,7 @@ public class AgentEventConsumer {
     @Scheduled(fixedRate = 1000)
     public void consume2() {
         try {
-            final List<MapRecord<String, Object, Object>> messages = getRecords(consumerName_2);
+            final List<MapRecord<String, Object, Object>> messages = getRecords(consumerName2);
             if (!CollectionUtils.isEmpty(messages)) {
                 processMessage(messages);
             }
