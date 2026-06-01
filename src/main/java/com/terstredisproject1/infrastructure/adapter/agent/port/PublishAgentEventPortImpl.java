@@ -19,7 +19,7 @@ public class PublishAgentEventPortImpl implements PublishAgentEventPort {
     private String taskCompletionChannel;
 
     private final StringRedisTemplate stringRedisTemplate;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public void publishTaskCompleted(AgentMessageEvent event) {
