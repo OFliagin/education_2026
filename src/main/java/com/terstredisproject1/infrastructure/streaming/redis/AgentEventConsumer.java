@@ -30,6 +30,8 @@ public class AgentEventConsumer {
     private String consumerName1;
     @Value("${ai.task.events.stream.consumer.name:app-instance}-${random.uuid}")
     private String consumerName2;
+    @Value("${ai.task.events.stream.consumer.name:app-instance-recovery}")
+    private String recoveryConsumerName;
 
 
     @PostConstruct
@@ -63,6 +65,19 @@ public class AgentEventConsumer {
     }
 
     @Scheduled(fixedRate = 1000)
+    public void recovery() {
+        try {
+            final List<MapRecord<String, Object, Object>> messages = getRecords(recoveryConsumerName);
+            if (!CollectionUtils.isEmpty(messages)) {
+                log.info("recovery messages: {}", messages);
+                processMessage(messages);
+            }
+        } catch (Exception e) {
+            log.error("Failed to read from stream {}", streamKey, e);
+        }
+    }
+
+    @Scheduled(fixedRate = 1000)
     public void consume2() {
         try {
             final List<MapRecord<String, Object, Object>> messages = getRecords(consumerName2);
@@ -78,14 +93,14 @@ public class AgentEventConsumer {
     @Scheduled(fixedRate = 10_000)
     public void recoverPendingMessages() {
         try{
-            autoClaimRaw();
+            claimExpiredPendingMessages();
         } catch (Exception e) {
             log.error("Failed to read from stream '{}': {}", streamKey, e.getMessage());
         }
     }
 
     @SuppressWarnings("unchecked")
-    private void autoClaimRaw() {
+    private void claimExpiredPendingMessages() {
         PendingMessages pending = stringRedisTemplate.opsForStream().pending(
                 streamKey,
                 CONSUMER_GROUP_NAME,
@@ -104,7 +119,7 @@ public class AgentEventConsumer {
         List<MapRecord<String, Object, Object>> claimed = stringRedisTemplate.opsForStream().claim(
                 streamKey,
                 CONSUMER_GROUP_NAME,
-                consumerName2,
+                recoveryConsumerName,
                 Duration.ofSeconds(60),
                 idleIds.toArray(RecordId[]::new)
         );
