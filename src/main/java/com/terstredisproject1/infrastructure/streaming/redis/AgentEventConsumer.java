@@ -12,22 +12,30 @@ import org.springframework.util.CollectionUtils;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class AgentEventConsumer {
     private static final String CONSUMER_GROUP_NAME = "ai-task-event-processors";
-    private static final String CONSUMER_NAME = "app-instance-1";
+
     private final StringRedisTemplate stringRedisTemplate;
 
     @Value("${ai.task.events.stream.key:ai:task:stream:events}")
     private String streamKey;
+    @Value("${ai.task.events.stream.cinsumer.name:app-instance}-${random.uuid}")
+    private String consumerName = "app-instance-1";
 
 
     @PostConstruct
     public void init() {
         try {
+            stringRedisTemplate.opsForStream().add(
+                    streamKey,
+                    Map.of("init", "true")
+            );
+
             stringRedisTemplate.opsForStream().createGroup(
                     streamKey,
                     ReadOffset.from("0"),
@@ -69,7 +77,7 @@ public class AgentEventConsumer {
     @SuppressWarnings("unchecked")
     private List<MapRecord<String, Object, Object>> getRecords() {
         return stringRedisTemplate.opsForStream().read(
-                Consumer.from(CONSUMER_GROUP_NAME, CONSUMER_NAME),
+                Consumer.from(CONSUMER_GROUP_NAME, consumerName),
                 StreamReadOptions.empty()
                         .count(10)
                         .block(Duration.ofMillis(900)),

@@ -18,7 +18,7 @@ public class StreamAgentEventPortImpl implements StreamAgentEventPort {
     private String streamKey;
 
     @Override
-    public void streaming(AgentMessageEvent event) {
+    public void appendEvent(AgentMessageEvent event) {
         stringRedisTemplate.opsForStream().add(
                 streamKey,
                 Map.of(

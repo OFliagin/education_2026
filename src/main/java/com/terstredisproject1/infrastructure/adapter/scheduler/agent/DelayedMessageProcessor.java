@@ -46,7 +46,7 @@ public class DelayedMessageProcessor {
                     .build();
 
             if (useStream) {
-                streamAgentEventPort.streaming(agentMessageEvent);
+                streamAgentEventPort.appendEvent(agentMessageEvent);
             } else {
                 publishAgentEventPort.publishTaskCompleted(agentMessageEvent);
             }

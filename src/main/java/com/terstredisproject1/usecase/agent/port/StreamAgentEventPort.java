@@ -4,5 +4,5 @@ import com.terstredisproject1.domain.model.agent.AgentMessageEvent;
 
 public interface StreamAgentEventPort {
 
-    void streaming(AgentMessageEvent event);
+    void appendEvent(AgentMessageEvent event);
 }
