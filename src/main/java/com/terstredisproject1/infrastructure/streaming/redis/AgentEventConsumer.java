@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Range;
 import org.springframework.data.redis.connection.stream.*;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -57,7 +58,7 @@ public class AgentEventConsumer {
                 processMessage(messages);
             }
         } catch (Exception e) {
-            log.error("Failed to read from stream '{}': {}", streamKey, e.getMessage());
+            log.error("Failed to read from stream {}", streamKey, e);
         }
     }
 
@@ -70,6 +71,45 @@ public class AgentEventConsumer {
             }
         } catch (Exception e) {
             log.error("Failed to read from stream '{}': {}", streamKey, e.getMessage());
+        }
+    }
+
+
+    @Scheduled(fixedRate = 10_000)
+    public void recoverPendingMessages() {
+        try{
+            autoClaimRaw();
+        } catch (Exception e) {
+            log.error("Failed to read from stream '{}': {}", streamKey, e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void autoClaimRaw() {
+        PendingMessages pending = stringRedisTemplate.opsForStream().pending(
+                streamKey,
+                CONSUMER_GROUP_NAME,
+                Range.unbounded(),
+                10L
+        );
+        if (pending.isEmpty()) return;
+
+        List<RecordId> idleIds = pending.stream()
+                .filter(msg -> msg.getElapsedTimeSinceLastDelivery().toSeconds() >= 60)
+                .map(PendingMessage::getId)
+                .toList();
+        if (idleIds.isEmpty()) return;
+
+        log.info("Reclaiming {} pending messages idle for >=60s", idleIds.size());
+        List<MapRecord<String, Object, Object>> claimed = stringRedisTemplate.opsForStream().claim(
+                streamKey,
+                CONSUMER_GROUP_NAME,
+                consumerName2,
+                Duration.ofSeconds(60),
+                idleIds.toArray(RecordId[]::new)
+        );
+        if (!CollectionUtils.isEmpty(claimed)) {
+            processMessage(claimed);
         }
     }
 
@@ -98,8 +138,8 @@ public class AgentEventConsumer {
                         .block(Duration.ofMillis(900)),
                 StreamOffset.create(streamKey, ReadOffset.lastConsumed())
         );
-        if (!CollectionUtils.isEmpty(read)) {
-            log.info("Reading from consumerName '{}'", consumerName);
+        if (!CollectionUtils.isEmpty(read) && consumerName.equals(consumerName1)) {
+            throw new RuntimeException("broking consumer for test");
         }
         return read;
     }
