@@ -7,8 +7,10 @@ import com.terstredisproject1.usecase.agent.DeleteDelayedMessageUseCase;
 import com.terstredisproject1.usecase.agent.GetDelayedMessageUseCase;
 import com.terstredisproject1.usecase.agent.GetMessageUseCase;
 import com.terstredisproject1.usecase.agent.port.PublishAgentEventPort;
+import com.terstredisproject1.usecase.agent.port.StreamAgentEventPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +26,10 @@ public class DelayedMessageProcessor {
     private final GetMessageUseCase getMessageUseCase;
     private final DeleteDelayedMessageUseCase deleteDelayedMessageUseCase;
     private final PublishAgentEventPort publishAgentEventPort;
+    private final StreamAgentEventPort streamAgentEventPort;
+
+    @Value("${ai.task.event.stream.enabled:true}")
+    private boolean useStream;
 
     @Scheduled(fixedDelay = 1000)
     public void process() {
@@ -39,7 +45,11 @@ public class DelayedMessageProcessor {
                     .completedAt(Instant.now())
                     .build();
 
-            publishAgentEventPort.publishTaskCompleted(agentMessageEvent);
+            if (useStream) {
+                streamAgentEventPort.streaming(agentMessageEvent);
+            } else {
+                publishAgentEventPort.publishTaskCompleted(agentMessageEvent);
+            }
             deleteDelayedMessageUseCase.delete(dm);
         }
     }
