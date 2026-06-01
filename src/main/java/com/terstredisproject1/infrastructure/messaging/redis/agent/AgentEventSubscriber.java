@@ -8,6 +8,6 @@ import org.springframework.stereotype.Component;
 public class AgentEventSubscriber {
 
     public void onMessage(String message) {
-        log.info("Received message: {}", message);
+        log.info("Received AI task completed event: {}", message);
     }
 }

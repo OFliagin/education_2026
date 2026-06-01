@@ -1,6 +1,6 @@
 package com.terstredisproject1.infrastructure.adapter.scheduler.agent;
 
-import com.terstredisproject1.domain.model.AgentMessageEvent;
+import com.terstredisproject1.domain.model.agent.AgentMessageEvent;
 import com.terstredisproject1.domain.model.agent.AgentResult;
 import com.terstredisproject1.domain.model.agent.DelayedMessage;
 import com.terstredisproject1.usecase.agent.DeleteDelayedMessageUseCase;
@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Component
@@ -36,7 +36,7 @@ public class DelayedMessageProcessor {
                     .originalMessage(dm.message())
                     .userId(dm.userId())
                     .agentResponse(result.message())
-                    .completedAt(LocalDateTime.now())
+                    .completedAt(Instant.now())
                     .build();
 
             publishAgentEventPort.publishTaskCompleted(agentMessageEvent);

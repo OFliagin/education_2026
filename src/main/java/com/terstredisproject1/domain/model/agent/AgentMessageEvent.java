@@ -1,9 +1,9 @@
-package com.terstredisproject1.domain.model;
+package com.terstredisproject1.domain.model.agent;
 
 import lombok.Builder;
 import lombok.Value;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Builder
 @Value
@@ -11,5 +11,5 @@ public class AgentMessageEvent {
     long userId;
     String originalMessage;
     String agentResponse;
-    LocalDateTime completedAt;
+    Instant completedAt;
 }
