@@ -3,6 +3,7 @@ package com.terstredisproject1.infrastructure.streaming.redis;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.stream.*;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -25,7 +26,9 @@ public class AgentEventConsumer {
     @Value("${ai.task.events.stream.key:ai:task:stream:events}")
     private String streamKey;
     @Value("${ai.task.events.stream.consumer.name:app-instance}-${random.uuid}")
-    private String consumerName = "app-instance-1";
+    private String consumerName_1;
+    @Value("${ai.task.events.stream.consumer.name:app-instance}-${random.uuid}")
+    private String consumerName_2;
 
 
     @PostConstruct
@@ -47,9 +50,21 @@ public class AgentEventConsumer {
 
 
     @Scheduled(fixedRate = 1000)
-    public void consume() {
+    public void consume1() {
         try {
-            final List<MapRecord<String, Object, Object>> messages = getRecords();
+            final List<MapRecord<String, Object, Object>> messages = getRecords(consumerName_1);
+            if (!CollectionUtils.isEmpty(messages)) {
+                processMessage(messages);
+            }
+        } catch (Exception e) {
+            log.error("Failed to read from stream '{}': {}", streamKey, e.getMessage());
+        }
+    }
+
+    @Scheduled(fixedRate = 1000)
+    public void consume2() {
+        try {
+            final List<MapRecord<String, Object, Object>> messages = getRecords(consumerName_2);
             if (!CollectionUtils.isEmpty(messages)) {
                 processMessage(messages);
             }
@@ -75,13 +90,17 @@ public class AgentEventConsumer {
     }
 
     @SuppressWarnings("unchecked")
-    private List<MapRecord<String, Object, Object>> getRecords() {
-        return stringRedisTemplate.opsForStream().read(
+    private List<MapRecord<String, Object, Object>> getRecords(String consumerName) {
+        final List<@NonNull MapRecord<String, Object, Object>> read = stringRedisTemplate.opsForStream().read(
                 Consumer.from(CONSUMER_GROUP_NAME, consumerName),
                 StreamReadOptions.empty()
                         .count(10)
                         .block(Duration.ofMillis(900)),
                 StreamOffset.create(streamKey, ReadOffset.lastConsumed())
         );
+        if (!CollectionUtils.isEmpty(read)) {
+            log.info("Reading from consumerName '{}'", consumerName);
+        }
+        return read;
     }
 }

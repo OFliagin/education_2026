@@ -137,7 +137,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <jvmArguments>-Duser.timezone=UTC --enable-native-access=ALL-UNNAMED</jvmArguments>
+                    <jvmArguments>-Duser.timezone=UTC --enable-native-access=ALL-UNNAMED -Dio.netty.allocator.type=unpooled</jvmArguments>
                 </configuration>
             </plugin>
             <plugin>
