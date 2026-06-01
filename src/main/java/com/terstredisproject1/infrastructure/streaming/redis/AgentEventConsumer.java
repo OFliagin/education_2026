@@ -24,7 +24,7 @@ public class AgentEventConsumer {
 
     @Value("${ai.task.events.stream.key:ai:task:stream:events}")
     private String streamKey;
-    @Value("${ai.task.events.stream.cinsumer.name:app-instance}-${random.uuid}")
+    @Value("${ai.task.events.stream.consumer.name:app-instance}-${random.uuid}")
     private String consumerName = "app-instance-1";
 
 
