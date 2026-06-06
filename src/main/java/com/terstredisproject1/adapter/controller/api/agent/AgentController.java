@@ -7,6 +7,7 @@ import com.terstredisproject1.adapter.controller.api.agent.response.TokenUsageRe
 import com.terstredisproject1.domain.exception.PaymentProfileNotActiveException;
 import com.terstredisproject1.domain.exception.TokenLimitExceeded;
 import com.terstredisproject1.domain.exception.TokenLockException;
+import com.terstredisproject1.domain.exception.TooManyRequestsException;
 import com.terstredisproject1.domain.model.agent.AgentDelayedMessage;
 import com.terstredisproject1.domain.model.agent.PeriodType;
 import com.terstredisproject1.domain.model.agent.TokenUsage;
@@ -61,5 +62,10 @@ public class AgentController {
     @ExceptionHandler(PaymentProfileNotActiveException.class)
     public ResponseEntity<String> handlePaymentProfileNotActive(PaymentProfileNotActiveException ex) {
         return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<String> handleTooManyRequests(TooManyRequestsException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(ex.getMessage());
     }
 }

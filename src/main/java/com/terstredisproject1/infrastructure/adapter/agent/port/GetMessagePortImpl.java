@@ -5,6 +5,7 @@ import com.terstredisproject1.domain.exception.TokenLockException;
 import com.terstredisproject1.domain.model.agent.AgentResult;
 import com.terstredisproject1.infrastructure.adapter.agent.TokenUsageLimiter;
 import com.terstredisproject1.infrastructure.client.AiAgentClient;
+import com.terstredisproject1.infrastructure.db.redis.RedisRequestRateLimit;
 import com.terstredisproject1.infrastructure.db.redis.RedisTokenRepository;
 import com.terstredisproject1.infrastructure.locker.Locker;
 import com.terstredisproject1.usecase.agent.port.GetMessagePort;
@@ -28,9 +29,11 @@ public class GetMessagePortImpl implements GetMessagePort {
     private final TokenUsageLimiter tokenUsageLimiter;
     private final AiAgentClient aiAgentClient;
     private final Locker locker;
+    private final RedisRequestRateLimit redisRequestRateLimit;
 
     @Override
     public AgentResult execute(long userId, String message) {
+        redisRequestRateLimit.chekLimit(userId);
         if (StringUtils.isBlank(message)) {
             return new AgentResult("Please ask a question");
         }
