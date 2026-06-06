@@ -12,11 +12,13 @@ import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
-public class RedisRequestRateLimit {
+public class RedisRequestRateLimiter {
     private final StringRedisTemplate stringRedisTemplate;
     private static final String COUNTER_PREFIX = "rate-limit:ai-message:";
     @Value("${ai.task.sent.limit:10}")
     private int sentLimit;
+    @Value("${ai.task.sent.window.seconds:60}")
+    private long windowSeconds;
 
     private static final DefaultRedisScript<Long> RATE_LIMIT_SCRIPT =
             new DefaultRedisScript<>("""
@@ -28,12 +30,15 @@ public class RedisRequestRateLimit {
                     """, Long.class);
 
 
+    /*
+    * Lua script runs inside Redis as a single atomic operation.
+    * */
     public void checkLimit(long userId) {
         final String key = getKey(userId);
         Long count = stringRedisTemplate.execute(
                 RATE_LIMIT_SCRIPT,
                 List.of(key),
-                "60"
+                windowSeconds
         );
         if (count == null) {
             throw new IllegalStateException("Failed to increment rate limit counter");
