@@ -65,19 +65,6 @@ public class AgentEventConsumer {
     }
 
     @Scheduled(fixedRate = 1000)
-    public void recovery() {
-        try {
-            final List<MapRecord<String, Object, Object>> messages = getRecords(recoveryConsumerName, true);
-            if (!CollectionUtils.isEmpty(messages)) {
-                log.info("recovery messages: {}", messages);
-                processMessage(messages);
-            }
-        } catch (Exception e) {
-            log.error("Failed to read from stream {}", streamKey, e);
-        }
-    }
-
-    @Scheduled(fixedRate = 1000)
     public void consume2() {
         try {
             final List<MapRecord<String, Object, Object>> messages = getRecords(consumerName2);
@@ -107,22 +94,32 @@ public class AgentEventConsumer {
                 Range.unbounded(),
                 10L
         );
-        if (pending.isEmpty()) return;
+
+        if (pending.isEmpty()) {
+            return;
+        }
 
         List<RecordId> idleIds = pending.stream()
                 .filter(msg -> msg.getElapsedTimeSinceLastDelivery().toSeconds() >= 60)
                 .map(PendingMessage::getId)
                 .toList();
-        if (idleIds.isEmpty()) return;
+
+        if (idleIds.isEmpty()) {
+            return;
+        }
 
         log.info("Reclaiming {} pending messages idle for >=60s — handing off to recovery consumer", idleIds.size());
-        stringRedisTemplate.opsForStream().claim(
+        List<MapRecord<String, Object, Object>> claimed = stringRedisTemplate.opsForStream().claim(
                 streamKey,
                 CONSUMER_GROUP_NAME,
                 recoveryConsumerName,
                 Duration.ofSeconds(60),
                 idleIds.toArray(RecordId[]::new)
         );
+
+        if (!CollectionUtils.isEmpty(claimed)) {
+            processMessage(claimed);
+        }
     }
 
     private void processMessage(List<MapRecord<String, Object, Object>> records) {
@@ -142,23 +139,18 @@ public class AgentEventConsumer {
     }
 
     @SuppressWarnings("unchecked")
-
-    private List<MapRecord<String, Object, Object>> getRecords(String consumerName, boolean fromFirst) {
+    private List<MapRecord<String, Object, Object>> getRecords(String consumerName) {
         final List<@NonNull MapRecord<String, Object, Object>> read = stringRedisTemplate.opsForStream().read(
                 Consumer.from(CONSUMER_GROUP_NAME, consumerName),
                 StreamReadOptions.empty()
                         .count(10)
                         .block(Duration.ofMillis(900)),
-                StreamOffset.create(streamKey, fromFirst ? ReadOffset.from("0") : ReadOffset.lastConsumed())
+                StreamOffset.create(streamKey, ReadOffset.lastConsumed())
         );
+
         if (!CollectionUtils.isEmpty(read) && consumerName.equals(consumerName1)) {
             throw new RuntimeException("broking consumer for test");
         }
         return read;
-    }
-
-
-    private List<MapRecord<String, Object, Object>> getRecords(String consumerName) {
-        return getRecords(consumerName, false);
     }
 }
