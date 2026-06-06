@@ -12,19 +12,22 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class RedisRequestRateLimit {
     private final StringRedisTemplate stringRedisTemplate;
-    private static final String COUNTER_PREFIX = "counter:";
+    private static final String COUNTER_PREFIX = "rate-limit:ai-message:";
 
     @Value("${ai.task.sent.limit:10}")
     private int sentLimit;
 
-    public void chekLimit(long userId) {
+    public void checkLimit(long userId) {
         final String key = getKey(userId);
         final Long increment = stringRedisTemplate.opsForValue().increment(key);
-        if(increment == 1) {
+        if (increment == null) {
+            throw new IllegalStateException("Failed to increment rate limit counter");
+        }
+        if (increment == 1) {
             stringRedisTemplate.expire(key, Duration.ofMinutes(1));
         }
-        if(increment > sentLimit) {
-            throw new TooManyRequestsException("User has" + userId + "  reached the limit of " + sentLimit + " messages per minute");
+        if (increment > sentLimit) {
+            throw new TooManyRequestsException("User " + userId + " has reached the limit of " + sentLimit + " messages per minute");
         }
     }
 

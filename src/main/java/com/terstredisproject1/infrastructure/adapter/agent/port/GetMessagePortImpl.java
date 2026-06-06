@@ -33,10 +33,11 @@ public class GetMessagePortImpl implements GetMessagePort {
 
     @Override
     public AgentResult execute(long userId, String message) {
-        redisRequestRateLimit.chekLimit(userId);
         if (StringUtils.isBlank(message)) {
             return new AgentResult("Please ask a question");
         }
+
+        redisRequestRateLimit.checkLimit(userId);
 
         UUID lockUuid = UUID.randomUUID();
         if (locker.lock(String.valueOf(userId), lockUuid)) {
