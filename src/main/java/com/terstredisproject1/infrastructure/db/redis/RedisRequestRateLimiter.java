@@ -31,7 +31,69 @@ public class RedisRequestRateLimiter {
                     """, Long.class);
 
 
-    public void checkLimit(Long userId) {
+    private static final DefaultRedisScript<Long> SLIDING_WINDOW_RATE_LIMIT_SCRIPT =
+            new DefaultRedisScript<>("""
+                local key = KEYS[1]
+                local now = tonumber(ARGV[1])
+                local window = tonumber(ARGV[2])
+                local limit = tonumber(ARGV[3])
+                local member = ARGV[4]
+                local ttl = tonumber(ARGV[5])
+
+                redis.call('ZREMRANGEBYSCORE', key, 0, now - window)
+
+                local count = redis.call('ZCARD', key)
+
+                if count >= limit then
+                    return 0
+                end
+
+                redis.call('ZADD', key, now, member)
+                redis.call('EXPIRE', key, ttl)
+
+                return 1
+                """, Long.class);
+
+
+    /*
+    * This implementation is atomic.
+    * Lua script runs inside Redis as a single atomic operation.
+    * */
+    public void checkSlidingWindowLimitLua(Long userId) {
+        final String key = getKey(userId);
+
+        long now = System.currentTimeMillis();
+        long windowMillis = Duration.ofSeconds(windowSeconds).toMillis();
+        long ttlSeconds = windowSeconds * 2;
+        String member = now + ":" + UUID.randomUUID();
+
+        Long allowed = stringRedisTemplate.execute(
+                SLIDING_WINDOW_RATE_LIMIT_SCRIPT,
+                List.of(key),
+                String.valueOf(now),
+                String.valueOf(windowMillis),
+                String.valueOf(sentLimit),
+                member,
+                String.valueOf(ttlSeconds)
+        );
+
+        if (allowed == null) {
+            throw new IllegalStateException("Failed to execute sliding window rate limit script");
+        }
+
+        if (allowed == 0) {
+            throw new TooManyRequestsException(
+                    "User " + userId + " has reached the limit of "
+                            + sentLimit + " messages per "
+                            + windowSeconds + " seconds"
+            );
+        }
+    }
+
+    /*
+    * This implementation is not atomic.
+    * */
+    public void checkSlidingWindowLimit(Long userId) {
         final String key = getKey(userId);
 
         long now = System.currentTimeMillis();
@@ -79,7 +141,7 @@ public class RedisRequestRateLimiter {
     /*
      * Lua script runs inside Redis as a single atomic operation.
      * */
-    public void checkLimitLuaImpl(long userId) {
+    public void checkFixedWindowLuaImpl(long userId) {
         final String key = getKey(userId);
         Long count = stringRedisTemplate.execute(
                 RATE_LIMIT_SCRIPT,
@@ -94,8 +156,7 @@ public class RedisRequestRateLimiter {
         }
     }
 
-    @Deprecated
-    public void checkLimitSpringBootImpl(long userId) {
+    public void checkFixedWindowSpringImplementation(long userId) {
         final String key = getKey(userId);
         final Long increment = stringRedisTemplate.opsForValue().increment(key);
         if (increment == null) {
