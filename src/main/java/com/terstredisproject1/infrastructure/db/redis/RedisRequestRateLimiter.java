@@ -21,6 +21,9 @@ public class RedisRequestRateLimiter {
     @Value("${ai.task.sent.window.seconds:60}")
     private long windowSeconds;
 
+    private static final long ALLOWED = 1L;
+    private static final long REJECTED = 0L;
+
     private static final DefaultRedisScript<Long> RATE_LIMIT_SCRIPT =
             new DefaultRedisScript<>("""
                     local count = redis.call('INCR', KEYS[1])
@@ -81,7 +84,7 @@ public class RedisRequestRateLimiter {
             throw new IllegalStateException("Failed to execute sliding window rate limit script");
         }
 
-        if (allowed == 0) {
+        if (allowed == REJECTED) {
             throw new TooManyRequestsException(
                     "User " + userId + " has reached the limit of "
                             + sentLimit + " messages per "
