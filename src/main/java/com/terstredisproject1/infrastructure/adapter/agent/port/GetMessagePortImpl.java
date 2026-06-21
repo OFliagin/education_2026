@@ -37,7 +37,7 @@ public class GetMessagePortImpl implements GetMessagePort {
             return new AgentResult("Please ask a question");
         }
 
-        redisRequestRateLimiter.checkSlidingWindowLimitLua(userId);
+        redisRequestRateLimiter.checkTokenBucketLimit(userId);
 
         UUID lockUuid = UUID.randomUUID();
         if (locker.lock(String.valueOf(userId), lockUuid)) {
