@@ -50,8 +50,11 @@ public class RedisRequestRateLimiter {
     @Value("${ai.task.rate-limit.token-bucket.ttl-seconds:120}")
     private int tokenBucketTtlSeconds;
     private static final String REQUEST_QUOTA_PREFIX = "request-quota:";
-    private static final long ALLOWED = 1L;
     private static final long REJECTED = 0L;
+
+    // Token-bucket Redis Hash field names (must match the literals in TOKEN_BUCKET_RATE_LIMIT_SCRIPT).
+    private static final String TOKENS_FIELD = "tokens";
+    private static final String LAST_REFILL_TIME_FIELD = "lastRefillTime";
 
     private static final DefaultRedisScript<Long> TOKEN_BUCKET_RATE_LIMIT_SCRIPT =
             new DefaultRedisScript<>("""
@@ -214,42 +217,50 @@ public class RedisRequestRateLimiter {
      */
     public void checkTokenBucketLimit(Long userId) {
         String key = getRequestQuotaKey(userId);
+        long now = System.currentTimeMillis();
 
-        // Defaults for a brand-new bucket: start full at capacity, "now" as the timestamp.
-        long availableTokens = tokenBucketCapacity;
-        long currentTime = System.currentTimeMillis();
+        // 1. Read the persisted state. Values are stored as strings (StringRedisTemplate),
+        //    so read both fields and guard against a missing/partial hash.
+        Object storedTokens = stringRedisTemplate.opsForHash().get(key, TOKENS_FIELD);
+        Object storedLastRefill = stringRedisTemplate.opsForHash().get(key, LAST_REFILL_TIME_FIELD);
 
-        // Does the bucket already exist in Redis? If not, we treat it as a full bucket.
-        final boolean empty = stringRedisTemplate.opsForHash().entries(key).isEmpty();
-        long tokensToAdd = 0;
-        if (!empty) {
-            // 1. Read the persisted state: how many tokens were left and when we last refilled.
-            long currentTokens = Long.parseLong(stringRedisTemplate.opsForHash().get(key, "tokens").toString());
-            long lastRefillTime = Long.parseLong(stringRedisTemplate.opsForHash().get(key, "lastRefillTime").toString());
+        long availableTokens;
+        long newLastRefillTime;
+        if (storedTokens == null || storedLastRefill == null) {
+            // 2a. Brand-new (or incomplete) bucket: start full at capacity, anchored at "now".
+            availableTokens = tokenBucketCapacity;
+            newLastRefillTime = now;
+        } else {
+            long currentTokens = Long.parseLong(storedTokens.toString());
+            long lastRefillTime = Long.parseLong(storedLastRefill.toString());
 
-            // 2. Refill: add one token per whole second elapsed since the last refill,
-            //    capped at the bucket capacity (tokens don't accumulate past full).
-            long refillInterval = currentTime - lastRefillTime;
-            tokensToAdd = refillInterval / 1000 * tokenBucketRefillRatePerSecond;
+            // 2b. Refill by whole elapsed seconds, capped at capacity. The sub-second
+            //     remainder is preserved by advancing lastRefillTime only by the seconds we
+            //     actually credited (mirrors the Lua script); otherwise steady sub-second
+            //     traffic would keep resetting the clock and the bucket would never refill.
+            long wholeSecondsElapsed = (now - lastRefillTime) / 1000;
+            long tokensToAdd = wholeSecondsElapsed * tokenBucketRefillRatePerSecond;
             availableTokens = Math.min(tokenBucketCapacity, currentTokens + tokensToAdd);
+            newLastRefillTime = tokensToAdd > 0 ? lastRefillTime + wholeSecondsElapsed * 1000 : lastRefillTime;
 
-            // 3. Reject if even after refill the bucket is empty (no token to spend).
+            // 3. Reject if even after refill there is no token to spend.
             if (availableTokens < 1) {
-                throw new TooManyRequestsException("User " + userId + " has reached the limit of " + tokenBucketCapacity + " messages per minute");
+                throw new TooManyRequestsException(
+                        "User " + userId + " has reached the token bucket request limit. "
+                                + "Capacity=" + tokenBucketCapacity
+                                + ", refillRatePerSecond=" + tokenBucketRefillRatePerSecond
+                );
             }
         }
 
-        // 4. Consume one token for this request and persist the new state back to Redis.
-        stringRedisTemplate.opsForHash().put(key, "tokens", availableTokens - 1);
-        stringRedisTemplate.opsForHash().put(key, "lastRefillTime", currentTime);
+        // 4. Consume one token and persist the new state (as strings, matching the read side).
+        stringRedisTemplate.opsForHash().put(key, TOKENS_FIELD, String.valueOf(availableTokens - 1));
+        stringRedisTemplate.opsForHash().put(key, LAST_REFILL_TIME_FIELD, String.valueOf(newLastRefillTime));
 
-        // 5. Set the TTL only when no refill happened (tokensToAdd == 0). NOTE: this is a
-        //    learning-grade heuristic — the bucket's expiry is not refreshed on every call,
-        //    so an active-but-not-refilling bucket can expire. The atomic Lua variant
-        //    (checkTokenBucketLimitLua) refreshes the TTL on every request instead.
-        if (tokensToAdd == 0) {
-            stringRedisTemplate.opsForHash().expire(key, Duration.ofSeconds(tokenBucketTtlSeconds), Set.of("tokens", "lastRefillTime"));
-        }
+        // 5. Refresh the TTL on every request, like the atomic Lua variant, so an active
+        //    bucket never expires mid-use (requires Redis 7.4+ for per-field HEXPIRE).
+        stringRedisTemplate.opsForHash().expire(key, Duration.ofSeconds(tokenBucketTtlSeconds),
+                Set.of(TOKENS_FIELD, LAST_REFILL_TIME_FIELD));
     }
 
 
@@ -389,7 +400,7 @@ public class RedisRequestRateLimiter {
      * @throws TooManyRequestsException if the counter exceeds {@code sentLimit}
      * @throws IllegalStateException    if the Lua script returns no result
      */
-    public void checkFixedWindowLuaImpl(long userId) {
+    public void checkFixedWindowLuaImpl(Long userId) {
         final String key = getKey(userId);
 
         // Atomically INCR the counter and, only on the first hit, set its TTL to the window
@@ -397,7 +408,7 @@ public class RedisRequestRateLimiter {
         Long count = stringRedisTemplate.execute(
                 RATE_LIMIT_SCRIPT,
                 List.of(key),
-                windowSeconds
+                String.valueOf(windowSeconds)
         );
 
         // null means the script did not run — not a limit decision.
@@ -407,7 +418,9 @@ public class RedisRequestRateLimiter {
 
         // Past the allowance for this window -> reject.
         if (count > sentLimit) {
-            throw new TooManyRequestsException("User " + userId + " has reached the limit of " + sentLimit + " messages per minute");
+            throw new TooManyRequestsException(
+                    "User " + userId + " has reached the limit of "
+                            + sentLimit + " messages per " + windowSeconds + " seconds");
         }
     }
 
@@ -415,12 +428,12 @@ public class RedisRequestRateLimiter {
      * Fixed Window rate limit — implemented with Spring Redis calls instead of
      * a Lua script.
      *
-     * <p>Same fixed-window idea as {@link #checkFixedWindowLuaImpl(long)}: an
+     * <p>Same fixed-window idea as {@link #checkFixedWindowLuaImpl(Long)}: an
      * atomic {@code INCR} via {@code opsForValue().increment()}, then on the
-     * first hit (value {@code == 1}) a separate {@code EXPIRE} sets a one-minute
-     * TTL. The increment itself is atomic, but the TTL is set in a second call,
-     * so a crash between the two could leave the key without expiry — the Lua
-     * variant avoids that gap.
+     * first hit (value {@code == 1}) a separate {@code EXPIRE} sets the TTL to
+     * the window length. The increment itself is atomic, but the TTL is set in
+     * a second call, so a crash between the two could leave the key without
+     * expiry — the Lua variant avoids that gap.
      *
      * <p>Key is {@value #COUNTER_PREFIX}{@code <userId>}.
      *
@@ -428,7 +441,7 @@ public class RedisRequestRateLimiter {
      * @throws TooManyRequestsException if the counter exceeds {@code sentLimit}
      * @throws IllegalStateException    if the counter cannot be incremented
      */
-    public void checkFixedWindowSpringImplementation(long userId) {
+    public void checkFixedWindowSpringImplementation(Long userId) {
         final String key = getKey(userId);
 
         // 1. Atomically increment the per-window counter (creates it at 1 on first request).
@@ -437,16 +450,18 @@ public class RedisRequestRateLimiter {
             throw new IllegalStateException("Failed to increment rate limit counter");
         }
 
-        // 2. On the very first request of the window, set the 1-minute TTL. This is a
-        //    second, separate call (unlike the Lua variant), so a crash right after the
+        // 2. On the very first request of the window, set the TTL to the window length. This
+        //    is a second, separate call (unlike the Lua variant), so a crash right after the
         //    INCR could leave the counter without an expiry and block the user forever.
         if (increment == 1) {
-            stringRedisTemplate.expire(key, Duration.ofMinutes(1));
+            stringRedisTemplate.expire(key, Duration.ofSeconds(windowSeconds));
         }
 
         // 3. Past the allowance for this window -> reject.
         if (increment > sentLimit) {
-            throw new TooManyRequestsException("User " + userId + " has reached the limit of " + sentLimit + " messages per minute");
+            throw new TooManyRequestsException(
+                    "User " + userId + " has reached the limit of "
+                            + sentLimit + " messages per " + windowSeconds + " seconds");
         }
     }
 
